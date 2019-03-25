@@ -3,7 +3,7 @@ package project
 import org.apache.log4j.LogManager
 import org.apache.spark.{SparkConf, SparkContext}
 
-object APrioriImpl {
+object ProjectImpl {
   def main(args: Array[String]): Unit = {
     val logger: org.apache.log4j.Logger = LogManager.getRootLogger
 
