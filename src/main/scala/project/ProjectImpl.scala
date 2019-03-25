@@ -4,6 +4,11 @@ import org.apache.log4j.LogManager
 import org.apache.spark.{SparkConf, SparkContext}
 
 object ProjectImpl {
+  def processInput(line: String): (Int, Int) = {
+    val nodes = line.split("\\s+")
+    (nodes(0).toInt, nodes(1).toInt)
+  }
+
   def main(args: Array[String]): Unit = {
     val logger: org.apache.log4j.Logger = LogManager.getRootLogger
 
@@ -17,6 +22,13 @@ object ProjectImpl {
     val sc = new SparkContext(conf)
     val input = args(0)
     val output = args(1)
-    val minSupport: Float = Float(args(2))
+    val minSupport: Float = args(2).toFloat
+
+    val textFile = sc.textFile(input)
+    val pairs = textFile.map(line => processInput(line)).groupByKey()
+
+
+    val debug = pairs.collect()
+    debug.foreach(println)
   }
 }
