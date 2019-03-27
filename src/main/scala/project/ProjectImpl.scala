@@ -18,11 +18,11 @@ object ProjectImpl {
     val input = sc.textFile(args(0))
     val output = args(1)
     //val minSupport: Float = Float(args(2))
-    
+
     //filtering by MaxID if required while testing. Commenting for now
     /*val filteredInp = input.filter(x => (x.split("\t")(0)).toInt < 100 && (x.split("\t")(1)).toInt < 100)
     filteredInp.foreach(x => println(x))*/
-    
+
     val followerList = input.map(x => (x.split("\t")(1),x.split("\t")(0).trim().toInt)).groupByKey().map(y => (y._2.toList.sortBy(y => y)))
     //followerList.foreach(x => println(x))
     followerList.coalesce(1).saveAsTextFile(args(1))

@@ -1,14 +1,90 @@
 package project.algorithm
 
-class Apriori {
-  var sp: Float = 0f;
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
-  def this(sp: Float, basket: Iterator[(Int, List[Int])]) {
-    this()
-    this.sp = sp
+object Apriori {
+  var k1FreqItemset = ListBuffer[String]
+  var freqItemset = ListBuffer[String]
+
+
+  def execute(_baskets: Iterator[Array[String]], sp: Float): Iterator[Array[String]] = {
+    val baskets: List[List[String]] = _baskets.toList.map(basket => basket.toList)
+    val len = baskets.length
+    var itemPairs = 1
+    var hasFreqItems = !baskets.isEmpty
+
+    var countTable = setFreqItems(baskets, sp, itemPairs)
+    val countThreshold = math.ceil(len * sp)
+
+    while(hasFreqItems) {
+      if (itemPairs > 1) {
+        hasFreqItems = getFreqItems(baskets, countTable, sp, itemPairs, countThreshold)
+      }
+
+      val _countTable = countTable
+      _countTable.foreach(item =>
+        if(item._2 >= countThreshold) {
+          k1FreqItemset += item._1
+          freqItemset += item._1
+        }
+      )
+      itemPairs += 1
+      countTable = getCountTable(k1FreqItemset, itemPairs)
+      k1FreqItemset = ListBuffer[String]
+    }
+
+    return _baskets
   }
 
-  def execute(basket: Iterator[(Int, List[Int])]): Unit = {
-    val basket = List(basket)
+  def setFreqItems(baskets: List[List[String]], sp: Float, numberOfPair: Int): mutable.HashMap[String, Int] = {
+    val countTable = mutable.HashMap.empty[String, Int]
+
+    baskets.foreach(basket =>
+      basket.foreach(i =>
+        countTable.get(i) match {
+          case None => countTable += (i -> 1)
+          case Some(x) => countTable(i) += 1
+        }
+      )
+    )
+
+    countTable
+  }
+
+  def getFreqItems(baskets: List[List[String]], countTable: mutable.HashMap[String, Int], sp: Float, itemPairs: Int, countThreshold: Double): Boolean = {
+    val _countTable: mutable.HashMap[String, Int] = countTable
+    var hasFreqItem = false
+
+    baskets.foreach { basket =>
+      _countTable.foreach { item =>
+        if (item._2 >= countThreshold) {
+          k1FreqItemset += item._1
+          freqItemset += item._1
+          countTable -= item._1
+        }
+      }
+      _countTable.foreach { item =>
+        if (item._1.split(",").toSet.subsetOf(basket.toSet)) {
+          hasFreqItem = true
+          countTable(item._1) += 1
+        }
+      }
+    }
+
+    hasFreqItem
+  }
+
+  def getCountTable(freqItemset: ListBuffer[String], itemPairs: Int): mutable.HashMap[String, Int] = {
+    var itemSet = Set[String]()
+    var tmp = Set[String]()
+    var countTable = mutable.HashMap.empty[String, Int]
+
+    freqItemset.foreach { item =>
+      item.split(",").foreach { i =>
+        tmp += i
+      }
+    }
+
   }
 }
