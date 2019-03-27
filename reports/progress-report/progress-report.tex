@@ -21,9 +21,44 @@
 
 \begin{center}
 
-%% Replace *name* by your full name below
 {\bf Name:}  Anak Agung Ngurah Bagus Trihatmaja, Jay Turakhia \\
 \href{https://github.ccs.neu.edu/prdx/CS6240-Project}{Spark GitHub}  \\
+{\bf Project Overview: }\\ There are various way to find associations between items in a dataset. Be it products that people buy together, songs that music aficionados listen together or books that readers would read. One such interesting association is that of twitter followership. It is often seen that similar minded users follow similar 'tweeters'.\\
+Such relations can be found solving the frequent itemset problem and here we attempt to do the same. The output can be used to provide suggestions to users so that they can follow new users that might be of interest to them. We apply a modification of the Apriori algorithm known as the SON algorithm \{Savasere \textit  {et. al}.\} The main idea is to find such relations across millions of followership data quickly and efficiently. We will be implementing this algorithm in Spark\\
+
+{\bf Input Data} \\
+We are using Twitter followership data to mine frequent followership patterns. As described by the data provider \" It contains a single txt file. In the file, there are 200 millions following relationships among Twitter users. In Twitter, a following relationship is from a user A to a user B, where A is called a follower of B, and B is called a friend of A. In the file, each line represents a following relationship from a user to another user. Specifically, its format is as follows.
+
+Format\\
+[Following Relationship 1] \\
+[Following Relationship 2]
+
+A following relationship from a user to another user can be represented by the two users' IDs. Specifically, a [Following Relationship] is represented as follows.
+
+Format \\
+[ USER ID1 ] \hspace{1cm} [USER ID2] \\
+1990012 \hspace{1cm} 1992012 \\
+
+\href{https://wiki.illinois.edu//wiki/display/forward/Dataset-UDI-TwitterCrawl-Aug2012}{ Input Data}
+
+ [{\bf Implementing Apriori}]\\
+This is the first main task to be implemented. Apriori will run on a part of the input in a separate task. This would be equivalent to finding the frequent itemset that appears frequently locally (local to that input). Input to this task shall be a chunk of the followership data described above and the output will be ...... \\
+
+\textit {Pseudo Code}\\
+\textit {Algorithm Analysis-}\\
+\textit {Experiments-}\\
+\textit {Speedup-}\\
+\textit {Scalabality-}\\
+\textit {Result Sample-}\\ .\\
+ 
+ [{\bf Implementing SON}]\\
+The second major task is to implement the SON algorithm which essentially finds the global frequent winner itemset from local itemsets. The input to this phase will be the output from the Apriori task (local frequent itemset) and the output will be a list of frequent itemsets.\\
+\textit {Pseudo Code}\\
+\textit {Algorithm Analysis-}\\
+\textit {Experiments-}\\
+\textit {Speedup-}\\
+\textit {Scalabality-}\\
+\textit {Result Sample-}\\
 
 Logs: \\
 Spark: \\
@@ -31,7 +66,7 @@ Spark: \\
 
 Outputs: \\
 Spark: \\
-\href{https://github.ccs.neu.edu/prdx/CS6240-Project/tree/master/output}{Spark}
+\href{https://github.ccs.neu.edu/prdx/CS6240-Project/tree/master/output}{Spark} \\
 
 \end{center}
 

@@ -4,11 +4,6 @@ import org.apache.log4j.LogManager
 import org.apache.spark.{SparkConf, SparkContext}
 
 object ProjectImpl {
-  def processInput(line: String): (Int, Int) = {
-    val nodes = line.split("\\s+")
-    (nodes(0).toInt, nodes(1).toInt)
-  }
-
   def main(args: Array[String]): Unit = {
     val logger: org.apache.log4j.Logger = LogManager.getRootLogger
 
@@ -20,15 +15,19 @@ object ProjectImpl {
       .setAppName("Project - APriori")
 
     val sc = new SparkContext(conf)
-    val input = args(0)
+    val input = sc.textFile(args(0))
     val output = args(1)
-    val minSupport: Float = args(2).toFloat
-
-    val textFile = sc.textFile(input)
-    val pairs = textFile.map(line => processInput(line)).groupByKey()
-
-
-    val debug = pairs.collect()
-    debug.foreach(println)
+    //val minSupport: Float = Float(args(2))
+    
+    //filtering by MaxID if required while testing. Commenting for now
+    /*val filteredInp = input.filter(x => (x.split("\t")(0)).toInt < 100 && (x.split("\t")(1)).toInt < 100)
+    filteredInp.foreach(x => println(x))*/
+    
+    val followerList = input.map(x => (x.split("\t")(1),x.split("\t")(0).trim().toInt)).groupByKey().map(y => (y._2.toList.sortBy(y => y)))
+    //followerList.foreach(x => println(x))
+    followerList.coalesce(1).saveAsTextFile(args(1))
   }
+  
+  
+  
 }
