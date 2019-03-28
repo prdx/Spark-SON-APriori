@@ -9,6 +9,6 @@ class Apriori {
   }
 
   def execute(basket: Iterator[(Int, List[Int])]): Unit = {
-    val basket = List(basket)
+    //val basket = List(basket)
   }
 }

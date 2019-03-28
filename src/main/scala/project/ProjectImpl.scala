@@ -23,8 +23,9 @@ object ProjectImpl {
     /*val filteredInp = input.filter(x => (x.split("\t")(0)).toInt < 100 && (x.split("\t")(1)).toInt < 100)
     filteredInp.foreach(x => println(x))*/
     
-    val followerList = input.map(x => (x.split("\t")(1),x.split("\t")(0).trim().toInt)).groupByKey().map(y => (y._2.toList.sortBy(y => y)))
-    //followerList.foreach(x => println(x))
+
+
+    val followerList = input.map(x => (x.split("\t")(0),new Array( x.split("\t")(1).toInt ))).groupByKey().map(y => (y._2.toList.sortBy(y => y)))
     followerList.coalesce(1).saveAsTextFile(args(1))
   }
   
