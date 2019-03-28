@@ -38,7 +38,7 @@ object Apriori {
       println(countTable)
     }
 
-    return freqItemset.iterator
+     freqItemset.iterator
   }
 
   def setFreqItems(baskets: List[List[String]], sp: Float, numberOfPair: Int): mutable.HashMap[String, Int] = {
@@ -91,7 +91,7 @@ object Apriori {
     }
 
     tmp.subsets(itemPairs).foreach { c =>
-      itemSet += c.toList.sorted.toSet.mkString(",")
+      itemSet += c.toList.map(x => x.toInt).sorted.toSet.mkString(",")
     }
 
     val itemSetList = itemSet.toList
@@ -108,8 +108,6 @@ object Apriori {
           innerLoop.breakable {
             for (k <- 0 to freqItemSetList.size - 1) {
               if (freqItemSetList(k) == c(j).mkString(",")) {
-                val temp = c(j).mkString(",")
-                val temp2 = freqItemSetList(k)
                 isExists = true
                 innerLoop.break()
               }
