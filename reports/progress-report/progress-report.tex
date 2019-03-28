@@ -72,7 +72,8 @@ We will not used the follower's user id as it is not relevant for the algorithm.
     .map(y => (y._2.toList.sortBy(y => y)))
 \end{lstlisting}
 
-\section{Phase 1}
+\section{SON A-Priori Algorithm}
+\subsection{Phase 1}
 
 This is the first main task to be implemented.
 A-priori will run on a part of the input in a separate task.
@@ -80,21 +81,43 @@ This would be equivalent to finding the frequent item sets that appears frequent
 The input of this task is the list of followee.
 We will output a frequent item sets for every k until there is no more frequent item sets for that k.
 
-\subsection {Pseudo Code}
+\subsubsection {Pseudo Code}
+The general algorithm for \href{https://www3.cs.stonybrook.edu/~cse634/lecture_notes/07apriori.pdf}{A-priori} is as follow \\
 
-\subsection {Algorithm Analysis}
-\subsection {Experiments}
-\subsection {Speedup}
-\subsection {Scalabality}
-\subsection {Result Sample}
+\begin{algorithm}[H]
+    \caption{A-priori}
+
+    \begin{algorithmic}[1]
+        \State $C_K \gets $ Candidate itemset of size $k$
+        \State $L_K \gets $ frequent itemset of size $k$
+        \State
+        \State $L_1 \gets $ List of frequent items $k$
+        \State
+        \State
+        \For{$k \gets 1; L_k \neq \emptyset; k++$}
+            \State $C_{k+1} \gets $ candidate generate from $L_k$
+            \For{each transaction $t$}
+                \State increment the count of all candidates in $C_{k+1}$ in $t$
+            \EndFor
+            \State $L_{k+1} \gets$ candidate in $C_{k+1}$ with minimum support
+        \EndFor
+    \end{algorithmic}
+\end{algorithm}
+
+\subsubsection {Algorithm Analysis}
+\subsubsection {Experiments}
+\subsubsection {Speedup}
+\subsubsection {Scalabality}
+\subsubsection {Result Sample}
  
-\section{Implementing SON}
+\subsection{Implementing SON}
+
 The second major task is to implement the SON algorithm which essentially finds the global frequent winner itemset from local itemsets. The input to this phase will be the output from the Apriori task (local frequent itemset) and the output will be a list of frequent itemsets.\\
-\subsection {Pseudo Code}
-\subsection {Algorithm Analysis}
-\subsection {Experiments}
-\subsection {Speedup}
-\subsection {Scalabality}
-\subsection {Result Sample}
+\subsubsection {Pseudo Code}
+\subsubsection {Algorithm Analysis}
+\subsubsection {Experiments}
+\subsubsection {Speedup}
+\subsubsection {Scalabality}
+\subsubsection {Result Sample}
 
 \end{document}
