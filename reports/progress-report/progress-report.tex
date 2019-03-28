@@ -22,43 +22,66 @@
     \medskip
 
 \section{Project Overview: }
-There are various way to find associations between items in a dataset. Be it products that people buy together, songs that music aficionados listen together or books that readers would read. One such interesting association is that of twitter followership. It is often seen that similar minded users follow similar 'tweeters'.\\
-Such relations can be found solving the frequent itemset problem and here we attempt to do the same. The output can be used to provide suggestions to users so that they can follow new users that might be of interest to them. We apply a modification of the Apriori algorithm known as the SON algorithm \{Savasere \textit  {et. al}.\} The main idea is to find such relations across millions of followership data quickly and efficiently. We will be implementing this algorithm in Spark\\
+There are various way to find associations between items in a dataset.
+Be it products that people buy together, songs that music aficionados listen together or books that readers would read.
+One such interesting association is that of Twitter followership.
+It is often seen that similar minded users follow similar 'tweeters'.\\
+Such relations can be found solving the frequent item set problem and here we attempt to do the same.
+The output can be used to provide suggestions to users so that they can follow new users that might be of interest to them.
+We apply a modification of the A-priori algorithm known as the SON algorithm \{Savasere \textit  {et. al}\}.
+The main idea is to find such relations across millions of followership data quickly and efficiently.
+We will be implementing this algorithm in Spark\\
 
 \section{Input Data}
-We are using \href{https://wiki.illinois.edu//wiki/display/forward/Dataset-UDI-TwitterCrawl-Aug2012}{Twitter} data to mine frequent followership patterns. As described by the data provider.
-The dataset contains a single txt file. 
-In the file, there are 200 millions following relationships among Twitter users. A following relationship is from a user X to Y , where X follows Y, and Y is followed by X. The input file represents this relation as follows.
+We are using \href{https://wiki.illinois.edu//wiki/display/forward/Dataset-UDI-TwitterCrawl-Aug2012}{Twitter} data to mine frequent followership patterns.
+As described by the data provider.
+The dataset contains a single txt file.
+In the file, there are 200 millions following relationships among Twitter users.
+A following relationship is from a user X to Y , where X follows Y, and Y is followed by X.
+The input file represents this relation as follows.
 
 Format\\
 $\big[$ Following Relationship 1 $\big]$\\
 $\big[$ Following Relationship 2 $\big]$\\
 
-A following relationship from a user to another user can be represented by the two users' IDs. Specifically, a following Relationship is represented as follows.
+A following relationship from a user to another user can be represented by the two users' IDs.
+Specifically, a following Relationship is represented as follows.
 
-Format \\
 1990012\hspace{1cm}1992012 \\
+
 \newpage
 \section{Pre-processing}
-In Frequent item mining, we have transactions and item. For our project, we define a transaction as an adjacency list of followees and item as a user id. Therefore, based on our input, we need to combine the followee based on the follower id. So that we have something as follow: \\
+In Frequent item mining, we have transactions and item.
+For our project, we define a transaction as an adjacency list of followees and item as a user id.
+Therefore, based on our input, we need to combine the followee based on the follower id.
+So that we have something as follow: \\
 
 $id_1, id_2$ \\
 $id_1, id_2, id_3, id_4$ \\
 $id_1, id_2, id_3$ \\
 
-Where id is the followee ID.
+Where id is the followee's user Id.
+We will not used the follower's user id as it is not relevant for the algorithm.
 
 \subsection{Pseudocode}
+
 \begin{lstlisting}
  val followerList = input
     .map(x => (x.split("\t")(0), Array(x.split("\t")(1).toInt)))
     .reduceByKey(_+_)
     .map(y => (y._2.toList.sortBy(y => y)))
 \end{lstlisting}
-\section{Implementing Apriori}
-This is the first main task to be implemented. Apriori will run on a part of the input in a separate task. This would be equivalent to finding the frequent itemset that appears frequently locally (local to that input). Input to this task shall be a chunk of the followership data described above and the output will be ...... \\
+
+\section{Phase 1}
+
+This is the first main task to be implemented.
+A-priori will run on a part of the input in a separate task.
+This would be equivalent to finding the frequent item sets that appears frequently locally (local to that input).
+The input of this task is the list of followee.
+We will output a frequent item sets for every k until there is no more frequent item sets for that k.
 
 \subsection {Pseudo Code}
+
 \subsection {Algorithm Analysis}
 \subsection {Experiments}
 \subsection {Speedup}
