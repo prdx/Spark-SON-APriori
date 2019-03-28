@@ -9,8 +9,8 @@ object Apriori {
   var freqItemset = ListBuffer[String]()
 
 
-  def execute(_baskets: Iterator[Array[String]], sp: Float): Iterator[String] = {
-    val baskets: List[List[String]] = _baskets.toList.map(basket => basket.toList)
+  def execute(_baskets: Iterator[List[Int]], sp: Float): Iterator[String] = {
+    val baskets: List[List[String]] = _baskets.toList.map(basket => basket.toList.map(x => x.toString))
     val len = baskets.length
     var itemPairs = 1
     var hasFreqItems = !baskets.isEmpty
