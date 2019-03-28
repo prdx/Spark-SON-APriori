@@ -9,7 +9,7 @@ object Apriori {
   var freqItemset = ListBuffer[String]()
 
 
-  def execute(_baskets: Iterator[Array[String]], sp: Float): Iterator[Array[String]] = {
+  def execute(_baskets: Iterator[Array[String]], sp: Float): Iterator[String] = {
     val baskets: List[List[String]] = _baskets.toList.map(basket => basket.toList)
     val len = baskets.length
     var itemPairs = 1
@@ -38,7 +38,7 @@ object Apriori {
       println(countTable)
     }
 
-    return _baskets
+    return freqItemset.iterator
   }
 
   def setFreqItems(baskets: List[List[String]], sp: Float, numberOfPair: Int): mutable.HashMap[String, Int] = {
