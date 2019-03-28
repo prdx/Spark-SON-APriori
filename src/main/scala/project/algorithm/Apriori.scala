@@ -2,10 +2,11 @@ package project.algorithm
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.util.control.Breaks
 
 object Apriori {
-  var k1FreqItemset = ListBuffer[String]
-  var freqItemset = ListBuffer[String]
+  var k1FreqItemset = ListBuffer[String]()
+  var freqItemset = ListBuffer[String]()
 
 
   def execute(_baskets: Iterator[Array[String]], sp: Float): Iterator[Array[String]] = {
@@ -31,7 +32,10 @@ object Apriori {
       )
       itemPairs += 1
       countTable = getCountTable(k1FreqItemset, itemPairs)
-      k1FreqItemset = ListBuffer[String]
+      k1FreqItemset = ListBuffer[String]()
+
+      println("------------")
+      println(countTable)
     }
 
     return _baskets
@@ -86,5 +90,41 @@ object Apriori {
       }
     }
 
+    tmp.subsets(itemPairs).foreach { c =>
+      itemSet += c.toList.sorted.toSet.mkString(",")
+    }
+
+    val itemSetList = itemSet.toList
+    for (i <- 0 to itemSet.size - 1) {
+      val c = itemSetList(i).split(",").toSet.subsets(itemPairs - 1).toList
+      val outerLoop = new Breaks
+
+      outerLoop.breakable {
+        for (j <- 0 to c.size - 1) {
+          var isExists = false
+          val innerLoop = new Breaks
+          val freqItemSetList = freqItemset.toList
+
+          innerLoop.breakable {
+            for (k <- 0 to freqItemSetList.size - 1) {
+              if (freqItemSetList(k) == c(j).mkString(",")) {
+                val temp = c(j).mkString(",")
+                val temp2 = freqItemSetList(k)
+                isExists = true
+                innerLoop.break()
+              }
+            }
+          }
+
+          if (!isExists) {
+            outerLoop.break()
+          } else {
+            countTable += (itemSetList(i) -> 0)
+          }
+        }
+      }
+    }
+
+    countTable
   }
 }
