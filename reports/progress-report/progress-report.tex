@@ -7,74 +7,179 @@
 \usepackage{graphicx}
 \usepackage{hyperref}
 \begin{document}
-    \thispagestyle{empty}
-    \setlength{\parindent}{0pt}
-    \setlength{\parskip}{1.8ex}
-    \lstset{language=Scala}
-    \newcommand{\hs}{\hspace{.1in}}
+\thispagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1.8ex}
+\lstset{language=Scala}
+\newcommand{\hs}{\hspace{.1in}}
 
-    \begin{center}
-        \Large{\bf CS 6240}
-        \Large{\bf Project Progress Report\\}
-        \Large{Anak Agung Ngurah Bagus Trihatmaja, Jay Turakhia\\}
-        \href{https://github.ccs.neu.edu/prdx/CS6240-Project}{Spark GitHub}  \\
-    \end{center}
-    \medskip
+\begin{center}
+    \Large{\bf CS 6240}
+    \Large{\bf Project Progress Report\\}
+    \Large{Anak Agung Ngurah Bagus Trihatmaja, Jay Turakhia\\}
+    \href{https://github.ccs.neu.edu/prdx/CS6240-Project}{Spark GitHub}  \\
+\end{center}
+\medskip
 
 \section{Project Overview: }
-There are various way to find associations between items in a dataset. Be it products that people buy together, songs that music aficionados listen together or books that readers would read. One such interesting association is that of twitter followership. It is often seen that similar minded users follow similar 'tweeters'.\\
-Such relations can be found solving the frequent itemset problem and here we attempt to do the same. The output can be used to provide suggestions to users so that they can follow new users that might be of interest to them. We apply a modification of the Apriori algorithm known as the SON algorithm \{Savasere \textit  {et. al}.\} The main idea is to find such relations across millions of followership data quickly and efficiently. We will be implementing this algorithm in Spark\\
+There are various way to find associations between items in a dataset.
+Be it products that people buy together, songs that music aficionados listen together or books that readers would read.
+One such interesting association is that of Twitter followership.
+It is often seen that similar minded users follow similar 'tweeters'.\\
+Such relations can be found solving the frequent item set problem and here we attempt to do the same.
+The output can be used to provide suggestions to users so that they can follow new users that might be of interest to them.
+We apply a modification of the A-priori algorithm known as the SON algorithm \{Savasere \textit  {et. al}\}.
+The main idea is to find such relations across millions of followership data quickly and efficiently.
+We will be implementing this algorithm in Spark\\
 
 \section{Input Data}
-We are using \href{https://wiki.illinois.edu//wiki/display/forward/Dataset-UDI-TwitterCrawl-Aug2012}{Twitter} data to mine frequent followership patterns. As described by the data provider.
-The dataset contains a single txt file. 
-In the file, there are 200 millions following relationships among Twitter users. A following relationship is from a user X to Y , where X follows Y, and Y is followed by X. The input file represents this relation as follows.
+We are using \href{https://wiki.illinois.edu//wiki/display/forward/Dataset-UDI-TwitterCrawl-Aug2012}{Twitter} data to mine frequent followership patterns.
+As described by the data provider.
+The dataset contains a single txt file.
+In the file, there are 200 millions following relationships among Twitter users.
+A following relationship is from a user X to Y , where X follows Y, and Y is followed by X.
+The input file represents this relation as follows.
 
 Format\\
 $\big[$ Following Relationship 1 $\big]$\\
 $\big[$ Following Relationship 2 $\big]$\\
 
-A following relationship from a user to another user can be represented by the two users' IDs. Specifically, a following Relationship is represented as follows.
+A following relationship from a user to another user can be represented by the two users' IDs.
+Specifically, a following Relationship is represented as follows.
 
-Format \\
 1990012\hspace{1cm}1992012 \\
+
 \newpage
 \section{Pre-processing}
-In Frequent item mining, we have transactions and item. For our project, we define a transaction as an adjacency list of followees and item as a user id. Therefore, based on our input, we need to combine the followee based on the follower id. So that we have something as follow: \\
+In Frequent item mining, we have transactions and item.
+For our project, we define a transaction as an adjacency list of followees and item as a user id.
+Therefore, based on our input, we need to combine the followee based on the follower id.
+So that we have something as follow: \\
 
 $id_1, id_2$ \\
 $id_1, id_2, id_3, id_4$ \\
 $id_1, id_2, id_3$ \\
 
-Where id is the followee ID.
+Where id is the followee's user Id.
+We will not used the follower's user id as it is not relevant for the algorithm.
 
 \subsection{Pseudocode}
+
 \begin{lstlisting}
  val followerList = input
     .map(x => (x.split("\t")(0), Array(x.split("\t")(1).toInt)))
     .reduceByKey(_+_)
     .map(y => (y._2.toList.sortBy(y => y)))
 \end{lstlisting}
-\section{Implementing Apriori}
-This is the first main task to be implemented. Apriori will run on a part of the input in a separate task. This would be equivalent to finding the frequent itemset that appears frequently locally (local to that input). Input to this task shall be a chunk of the followership data described above and the output will be ...... \\
 
-\subsection {Pseudo Code}
-\subsection {Algorithm Analysis}
-\subsection {Experiments}
-\subsection {Speedup}
-\subsection {Scalabality}
-\subsection {Result Sample}
+\section{SON A-Priori Algorithm}
+\subsection{Phase 1}
+
+This is the first main task to be implemented.
+A-priori will run on a part of the input in a separate task.
+This would be equivalent to finding the frequent item sets that appears frequently locally (local to that input).
+The input of this task is the list of followee.
+We will output a frequent item sets for every k until there is no more frequent item sets for that k.
+
+\subsubsection {Pseudo Code}
+The general algorithm for \href{https://www3.cs.stonybrook.edu/~cse634/lecture_notes/07apriori.pdf}{A-priori} is as follow \\
+
+\begin{algorithm}[H]
+    \caption{A-priori}
+
+    \begin{algorithmic}[1]
+        \State $C_K \gets $ Candidate itemset of size $k$
+        \State $L_K \gets $ frequent itemset of size $k$
+        \State
+        \State $L_1 \gets $ List of frequent items $k$
+        \State
+        \For{$k \gets 1; L_k \neq \emptyset; k++$}
+            \State $C_{k+1} \gets $ candidate generate from $L_k$
+            \For{each transaction $t$}
+                \State increment the count of all candidates in $C_{k+1}$ in $t$
+            \EndFor
+            \State $L_{k+1} \gets$ candidate in $C_{k+1}$ with minimum support
+        \EndFor
+    \end{algorithmic}
+\end{algorithm}
+
+Candidate generation in Scala: \\
+
+\begin{lstlisting}
+baskets.foreach { basket =>
+    // Candidate generation
+    _countTable.foreach { item =>
+        if (item._2 >= countThreshold) {
+            k1FreqItemset += item._1
+            freqItemset += item._1
+            countTable -= item._1
+        }
+    }
+
+    // Increment by one for each transaction
+    _countTable.foreach { item =>
+        if (item._1.split(",").toSet.subsetOf(basket.toSet)) {
+            hasFreqItem = true
+            countTable(item._1) += 1
+        }
+    }
+}
+\end{lstlisting}
+
+To generate $L_{k+1}$: \\
+
+\begin{lstlisting}
+for (i <- 0 to itemSet.size - 1) {
+    // Generate combinations
+    val c = itemSetList(i).split(",").toSet.subsets(itemPairs - 1).toList
+
+    val outerLoop = new Breaks
+    outerLoop.breakable {
+        for (j <- 0 to c.size - 1) {
+            var isExists = false
+            val innerLoop = new Breaks
+            val freqItemSetList = freqItemset.toList
+
+            innerLoop.breakable {
+                for (k <- 0 to freqItemSetList.size - 1) {
+                    // If there
+                    if (freqItemSetList(k) == c(j).mkString(",")) {
+                        isExists = true
+                        innerLoop.break()
+                    }
+                }
+            }
+
+            if (!isExists) {
+                outerLoop.break()
+            } else {
+                // Generate new L
+                countTable += (itemSetList(i) -> 0)
+            }
+        }
+    }
+}
+
+countTable
+\end{lstlisting}
+
+
+\subsubsection {Algorithm Analysis}
+\subsubsection {Experiments}
+\subsubsection {Speedup}
+\subsubsection {Scalabality}
+\subsubsection {Result Sample}
  
 \section{Implementing SON}
 The straight-forward Apriori algorithm does not have the best chances of parallelizing or in other words the SON implementation gives us a better chance to parallelize the computation. Apriori algorithm attempts to iterate through the entire dataset in each pass and accumulates frequent itemsets. On the contrary, the SON implementation uses the idea of local computation. It attempts to look at smaller subsets of the input and the local winners are sent across to a global reducer (or equivalent) so that global frequent itemsets can be computed. This implementation holds true because of the fact that “an item cannot be a frequent itemset globally if it is not so locally”\\
 It is easy to organize the input as small chunks and deploy worker machines in parallel to mine the local frequent itemsets. After this phase, all the frequent itemsets can be accumulated and another pass can be run to find the global frequent itemsets.
 
 The second major task is to implement the SON algorithm which essentially finds the global frequent winner itemset from local itemsets. The input to this phase will be the output from the Apriori task (local frequent itemset) and the output will be a list of frequent itemsets.\\
-\subsection {Pseudo Code}
-\subsection {Algorithm Analysis}
-\subsection {Experiments}
-\subsection {Speedup}
-\subsection {Scalabality}
-\subsection {Result Sample}
+\subsubsection {Pseudo Code}
+\subsubsection {Algorithm Analysis}
+\subsubsection {Experiments}
+\subsubsection {Speedup}
+\subsubsection {Scalabality}
+\subsubsection {Result Sample}
 
 \end{document}
