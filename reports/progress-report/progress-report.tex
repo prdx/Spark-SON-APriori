@@ -17,20 +17,20 @@
     \Large{\bf CS 6240}
     \Large{\bf Project Progress Report\\}
     \Large{Anak Agung Ngurah Bagus Trihatmaja, Jay Turakhia\\}
-    \href{https://github.ccs.neu.edu/prdx/CS6240-Project}{Spark GitHub}  \\
+    \href{https://github.ccs.neu.edu/prdx/CS6240-Project}{Project Repository}  \\
 \end{center}
 \medskip
 
-\section{Project Overview: }
+\section{Project Overview}
 There are various way to find associations between items in a dataset.
 Be it products that people buy together, songs that music aficionados listen together or books that readers would read.
 One such interesting association is that of Twitter followership.
-It is often seen that similar minded users follow similar 'tweeters'.\\
-Such relations can be found solving the frequent item set problem and here we attempt to do the same.
-The output can be used to provide suggestions to users so that they can follow new users that might be of interest to them.
-We apply a modification of the A-priori algorithm known as the SON algorithm \{Savasere \textit  {et. al}\}.
-The main idea is to find such relations across millions of followership data quickly and efficiently.
-We will be implementing this algorithm in Spark\\
+It is often seen that similar minded users follow similar users.
+In other words, if someone follows a person, who likely it will follow next?
+Such relations can be found by solving the \href{https://en.wikipedia.org/wiki/Association_rule_learning}{frequent item set problem} and here we attempt to do the same.
+One algorithm to mine the frequent pattern is A-priori.
+In this project, we will implement a variation of A-priori, which is \href{http://www.vldb.org/conf/1995/P432.PDF}{SON A-Priori}, to find such relations across millions of followership data quickly and efficiently in parallel.
+The algorithm is implemented in Spark.
 
 \section{Input Data}
 We are using \href{https://wiki.illinois.edu//wiki/display/forward/Dataset-UDI-TwitterCrawl-Aug2012}{Twitter} data to mine frequent followership patterns.
@@ -73,7 +73,48 @@ We will not used the follower's user id as it is not relevant for the algorithm.
 \end{lstlisting}
 
 \section{SON A-Priori Algorithm}
-\subsection{Phase 1}
+
+The straight-forward A-priori algorithm does not have the best chances of parallelizing.
+A-priori algorithm attempts to iterate through the entire dataset in each pass and accumulates frequent itemsets.
+In Map-Reduce, it cause a problem because we have to read the whole data from HDFS every iteration.
+In Spark, this problem can be solved by caching the transactions data in memory.
+However, if this data is huge, it might not fit in the memory.
+
+The SON A-Priori implementation in the other hand uses the idea of local computation.
+SON A-Priori partitions the data and attempts to look at smaller subsets of the input and the local winners are sent across to a global reducer (or equivalent) so that global frequent itemsets can be computed.
+It relies on a principle that "an itemset cannot be a frequent itemset globally if it is not so in at least one partition".
+It is easy to organize the input as small chunks and deploy worker machines in parallel to mine the local frequent itemsets.
+After this phase, all the frequent itemsets can be accumulated and another pass can be run to find the global frequent itemsets.
+The algorithm is as follows: \\
+
+\begin{algorithm}[H]
+    \caption{SON}
+
+    \begin{algorithmic}[1]
+        \State $P \gets $ Partition database
+        \State $n \gets $ number of partition
+        \State
+        \For{$k \gets 1$ to $n$} \Comment{Phase 1}
+            \State read\_in\_partition($p_i \in P$)
+            \State $L' \gets$ gen\_large\_itemsets($p_i$)
+        \EndFor
+        \For{$i \gets 2; L_{i}^{j} \neq \emptyset, j = 1,2,3,...,n; i++$}
+            \State $C_{i}^{G} \gets \cup_{j=1,2,...,n}L_{i}{j}$ \Comment{Merge phase}
+        \EndFor
+        \For{$i \gets 1$ to $n$} \Comment{Phase 2}
+            \State read\_in\_partition($p_i \in P$)
+            \For{all candidates $c \in C^G$}
+                gen\_count($c, p_i$)
+            \EndFor
+        \EndFor
+        \State $L^G \gets {c \in C^G|c.count \geq minSup}$
+    \end{algorithmic}
+\end{algorithm}
+In this progress report, we will implement the first task to generate local frequent itemsets (phase 1).
+The input to this phase will be the output from the A-priori task (local frequent itemset) and the output will be a list of frequent itemsets.
+The second major task is to find the global frequent winner itemset from local itemsets (phase 2).
+
+\subsection{Phase 1: Generating local frequent itemsets}
 
 This is the first main task to be implemented.
 A-priori will run on a part of the input in a separate task.
@@ -163,23 +204,19 @@ for (i <- 0 to itemSet.size - 1) {
 countTable
 \end{lstlisting}
 
-
 \subsubsection {Algorithm Analysis}
 \subsubsection {Experiments}
+In this task there are variables we can play around.
+The first one, we can change the the way we partition the data, that way we will have more fine-grained partition.
+Fine-grained partition allows smaller memory usage with better load distribution.
+Ideally, smaller partition means faster computation as well.
+In Spark, we have $repartition(numOfPartition)$ to reshuffle our data, before we run $mapPartition$.
+
+The second one, is to change the number of minimal support.
+Smaller support will give us larger amount of data, thus more computation.
+However, it also gives us more patterns of the data.
 \subsubsection {Speedup}
-\subsubsection {Scalabality}
+\subsubsection {Scalability}
 \subsubsection {Result Sample}
  
-\section{Implementing SON}
-The straight-forward Apriori algorithm does not have the best chances of parallelizing or in other words the SON implementation gives us a better chance to parallelize the computation. Apriori algorithm attempts to iterate through the entire dataset in each pass and accumulates frequent itemsets. On the contrary, the SON implementation uses the idea of local computation. It attempts to look at smaller subsets of the input and the local winners are sent across to a global reducer (or equivalent) so that global frequent itemsets can be computed. This implementation holds true because of the fact that “an item cannot be a frequent itemset globally if it is not so locally”\\
-It is easy to organize the input as small chunks and deploy worker machines in parallel to mine the local frequent itemsets. After this phase, all the frequent itemsets can be accumulated and another pass can be run to find the global frequent itemsets.
-
-The second major task is to implement the SON algorithm which essentially finds the global frequent winner itemset from local itemsets. The input to this phase will be the output from the Apriori task (local frequent itemset) and the output will be a list of frequent itemsets.\\
-\subsubsection {Pseudo Code}
-\subsubsection {Algorithm Analysis}
-\subsubsection {Experiments}
-\subsubsection {Speedup}
-\subsubsection {Scalabality}
-\subsubsection {Result Sample}
-
 \end{document}
