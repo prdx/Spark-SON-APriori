@@ -8,7 +8,7 @@ app.name=Project
 jar.name=project.jar
 maven.jar.name=project-1.0.jar
 job.name=project.ProjectImpl
-job.min.support=10
+job.min.support= 0
 local.master=local[4]
 local.input=input
 local.output=output
@@ -17,11 +17,13 @@ hdfs.user.name=prdx
 hdfs.input=input
 hdfs.output=output
 # AWS EMR Execution
-aws.emr.release=emr-5.20.0
-aws.bucket.name=cs6240s19/HW4-Spark
+aws.emr.release=emr-5.21.0
+aws.bucket.name=mr-prj-son
+aws.subnet.id=subnet-6356553a
 aws.input=input
 aws.output=output
 aws.log.dir=log
+aws.min.support=0.3
 aws.num.nodes=5
 aws.instance.type=m4.large
 # -----------------------------------------------------------
@@ -111,15 +113,14 @@ upload-app-aws:
 # Main EMR launch.
 aws: jar upload-app-aws delete-output-aws
 	aws emr create-cluster \
-		--name "FollowerCount Spark Cluster" \
+		--name "Apriori Small cluster" \
 		--release-label ${aws.emr.release} \
 		--instance-groups '[{"InstanceCount":${aws.num.nodes},"InstanceGroupType":"CORE","InstanceType":"${aws.instance.type}"},{"InstanceCount":1,"InstanceGroupType":"MASTER","InstanceType":"${aws.instance.type}"}]' \
 	    --applications Name=Hadoop Name=Spark \
-		--steps Type=CUSTOM_JAR,Name="${app.name}",Jar="command-runner.jar",ActionOnFailure=TERMINATE_CLUSTER,Args=["spark-submit","--deploy-mode","cluster","--class","${job.name}","s3://${aws.bucket.name}/${aws.num.nodes}/code/${jar.name}","s3://${aws.bucket.name}/${aws.num.nodes}/${aws.input}","s3://${aws.bucket.name}/${aws.num.nodes}/${aws.output}"] \
+		--steps Type=CUSTOM_JAR,Name="${app.name}",Jar="command-runner.jar",ActionOnFailure=TERMINATE_CLUSTER,Args=["spark-submit","--deploy-mode","cluster","--class","${job.name}","s3://${aws.bucket.name}/${aws.num.nodes}/code/${jar.name}","s3://${aws.bucket.name}/${aws.num.nodes}/${aws.input}","s3://${aws.bucket.name}/${aws.num.nodes}/${aws.output}","${aws.min.support}"] \
 		--log-uri s3://${aws.bucket.name}/${aws.num.nodes}/${aws.log.dir} \
 		--use-default-roles \
 		--enable-debugging \
-		--configurations file://./configurations.json \
 		--auto-terminate
 
 # Download output from S3.

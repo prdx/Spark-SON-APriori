@@ -66,6 +66,9 @@ This is the first main task to be implemented. Apriori will run on a part of the
 \subsection {Result Sample}
  
 \section{Implementing SON}
+The straight-forward Apriori algorithm does not have the best chances of parallelizing or in other words the SON implementation gives us a better chance to parallelize the computation. Apriori algorithm attempts to iterate through the entire dataset in each pass and accumulates frequent itemsets. On the contrary, the SON implementation uses the idea of local computation. It attempts to look at smaller subsets of the input and the local winners are sent across to a global reducer (or equivalent) so that global frequent itemsets can be computed. This implementation holds true because of the fact that “an item cannot be a frequent itemset globally if it is not so locally”\\
+It is easy to organize the input as small chunks and deploy worker machines in parallel to mine the local frequent itemsets. After this phase, all the frequent itemsets can be accumulated and another pass can be run to find the global frequent itemsets.
+
 The second major task is to implement the SON algorithm which essentially finds the global frequent winner itemset from local itemsets. The input to this phase will be the output from the Apriori task (local frequent itemset) and the output will be a list of frequent itemsets.\\
 \subsection {Pseudo Code}
 \subsection {Algorithm Analysis}
