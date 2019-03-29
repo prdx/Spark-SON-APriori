@@ -7,19 +7,19 @@
 \usepackage{graphicx}
 \usepackage{hyperref}
 \begin{document}
-    \thispagestyle{empty}
-    \setlength{\parindent}{0pt}
-    \setlength{\parskip}{1.8ex}
-    \lstset{language=Scala}
-    \newcommand{\hs}{\hspace{.1in}}
+\thispagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1.8ex}
+\lstset{language=Scala}
+\newcommand{\hs}{\hspace{.1in}}
 
-    \begin{center}
-        \Large{\bf CS 6240}
-        \Large{\bf Project Progress Report\\}
-        \Large{Anak Agung Ngurah Bagus Trihatmaja, Jay Turakhia\\}
-        \href{https://github.ccs.neu.edu/prdx/CS6240-Project}{Spark GitHub}  \\
-    \end{center}
-    \medskip
+\begin{center}
+    \Large{\bf CS 6240}
+    \Large{\bf Project Progress Report\\}
+    \Large{Anak Agung Ngurah Bagus Trihatmaja, Jay Turakhia\\}
+    \href{https://github.ccs.neu.edu/prdx/CS6240-Project}{Spark GitHub}  \\
+\end{center}
+\medskip
 
 \section{Project Overview: }
 There are various way to find associations between items in a dataset.
@@ -93,7 +93,6 @@ The general algorithm for \href{https://www3.cs.stonybrook.edu/~cse634/lecture_n
         \State
         \State $L_1 \gets $ List of frequent items $k$
         \State
-        \State
         \For{$k \gets 1; L_k \neq \emptyset; k++$}
             \State $C_{k+1} \gets $ candidate generate from $L_k$
             \For{each transaction $t$}
@@ -103,6 +102,67 @@ The general algorithm for \href{https://www3.cs.stonybrook.edu/~cse634/lecture_n
         \EndFor
     \end{algorithmic}
 \end{algorithm}
+
+Candidate generation in Scala: \\
+
+\begin{lstlisting}
+baskets.foreach { basket =>
+    // Candidate generation
+    _countTable.foreach { item =>
+        if (item._2 >= countThreshold) {
+            k1FreqItemset += item._1
+            freqItemset += item._1
+            countTable -= item._1
+        }
+    }
+
+    // Increment by one for each transaction
+    _countTable.foreach { item =>
+        if (item._1.split(",").toSet.subsetOf(basket.toSet)) {
+            hasFreqItem = true
+            countTable(item._1) += 1
+        }
+    }
+}
+\end{lstlisting}
+
+To generate $L_{k+1}$: \\
+
+\begin{lstlisting}
+for (i <- 0 to itemSet.size - 1) {
+    // Generate combinations
+    val c = itemSetList(i).split(",").toSet.subsets(itemPairs - 1).toList
+
+    val outerLoop = new Breaks
+    outerLoop.breakable {
+        for (j <- 0 to c.size - 1) {
+            var isExists = false
+            val innerLoop = new Breaks
+            val freqItemSetList = freqItemset.toList
+
+            innerLoop.breakable {
+                for (k <- 0 to freqItemSetList.size - 1) {
+                    // If there
+                    if (freqItemSetList(k) == c(j).mkString(",")) {
+                        isExists = true
+                        innerLoop.break()
+                    }
+                }
+            }
+
+            if (!isExists) {
+                outerLoop.break()
+            } else {
+                // Generate new L
+                countTable += (itemSetList(i) -> 0)
+            }
+        }
+    }
+}
+
+countTable
+\end{lstlisting}
+
 
 \subsubsection {Algorithm Analysis}
 \subsubsection {Experiments}
