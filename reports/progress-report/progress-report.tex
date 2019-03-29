@@ -21,7 +21,7 @@
 \end{center}
 \medskip
 
-\section{Project Overview: }
+\section{Project Overview}
 There are various way to find associations between items in a dataset.
 Be it products that people buy together, songs that music aficionados listen together or books that readers would read.
 One such interesting association is that of Twitter followership.
@@ -85,12 +85,36 @@ SON A-Priori partitions the data and attempts to look at smaller subsets of the 
 It relies on a principle that "an itemset cannot be a frequent itemset globally if it is not so in at least one partition".
 It is easy to organize the input as small chunks and deploy worker machines in parallel to mine the local frequent itemsets.
 After this phase, all the frequent itemsets can be accumulated and another pass can be run to find the global frequent itemsets.
+The algorithm is as follows: \\
 
-In this progress report, we will implement the first task to generate local frequent itemsets.
+\begin{algorithm}[H]
+    \caption{SON}
+
+    \begin{algorithmic}[1]
+        \State $P \gets $ Partition database
+        \State $n \gets $ number of partition
+        \State
+        \For{$k \gets 1$ to $n$} \Comment{Phase 1}
+            \State read\_in\_partition($p_i \in P$)
+            \State $L' \gets$ gen\_large\_itemsets($p_i$)
+        \EndFor
+        \For{$i \gets 2; L_{i}^{j} \neq \emptyset, j = 1,2,3,...,n; i++$}
+            \State $C_{i}^{G} \gets \cup_{j=1,2,...,n}L_{i}{j}$ \Comment{Merge phase}
+        \EndFor
+        \For{$i \gets 1$ to $n$} \Comment{Phase 2}
+            \State read\_in\_partition($p_i \in P$)
+            \For{all candidates $c \in C^G$}
+                gen\_count($c, p_i$)
+            \EndFor
+        \EndFor
+        \State $L^G \gets {c \in C^G|c.count \geq minSup}$
+    \end{algorithmic}
+\end{algorithm}
+In this progress report, we will implement the first task to generate local frequent itemsets (phase 1).
 The input to this phase will be the output from the A-priori task (local frequent itemset) and the output will be a list of frequent itemsets.
-The second major task is to find the global frequent winner itemset from local itemsets.
+The second major task is to find the global frequent winner itemset from local itemsets (phase 2).
 
-\subsection{Phase 1}
+\subsection{Phase 1: Generating local frequent itemsets}
 
 This is the first main task to be implemented.
 A-priori will run on a part of the input in a separate task.
@@ -180,11 +204,19 @@ for (i <- 0 to itemSet.size - 1) {
 countTable
 \end{lstlisting}
 
-
 \subsubsection {Algorithm Analysis}
 \subsubsection {Experiments}
+In this task there are variables we can play around.
+The first one, we can change the the way we partition the data, that way we will have more fine-grained partition.
+Fine-grained partition allows smaller memory usage with better load distribution.
+Ideally, smaller partition means faster computation as well.
+In Spark, we have $repartition(numOfPartition)$ to reshuffle our data, before we run $mapPartition$.
+
+The second one, is to change the number of minimal support.
+Smaller support will give us larger amount of data, thus more computation.
+However, it also gives us more patterns of the data.
 \subsubsection {Speedup}
-\subsubsection {Scalabality}
+\subsubsection {Scalability}
 \subsubsection {Result Sample}
  
 \end{document}
