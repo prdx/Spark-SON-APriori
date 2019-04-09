@@ -46,6 +46,7 @@ A following relationship from a user to another user can be represented by the t
 Specifically, a following Relationship is represented as follows.
 
 1990012\hspace{1cm}1992012
+
 \section{Pre-processing}
 In Frequent item mining, we have transactions and item.
 For our project, we define a transaction as an adjacency list of followees and item as a user id.
@@ -68,17 +69,8 @@ We will not used the follower's user id as it is not relevant for the algorithm.
     .map(y => (y._2.toList.sortBy(y => y)))
 \end{lstlisting}
 
+\section{A-priori}
 
-\section{Phase 1: A-priori for Generating local frequent itemsets}
-In this progress report, we will implement the first task to generate local frequent itemsets (phase 1).
-The input to this phase will be the output from the A-priori task (local frequent itemset) and the output will be a list of frequent itemsets.
-The second major task is to find the global frequent winner itemset from local itemsets (phase 2).\\
-A-priori will run on a part of the input in a separate task.
-This would be equivalent to finding the frequent item sets that appears frequently locally (local to that input).
-The input of this task is the list of followee.
-We will output a frequent item sets for every k until there is no more frequent item sets for that k.
-
-The general algorithm for 
 \subsection {Algorithm Analysis}
 The general algorithm for \href{https://www3.cs.stonybrook.edu/~cse634/lecture_notes/07apriori.pdf}{A-priori} is as follows\\
 \begin{algorithm}[H]
@@ -100,8 +92,6 @@ The general algorithm for \href{https://www3.cs.stonybrook.edu/~cse634/lecture_n
     \end{algorithmic}
 \end{algorithm}
 
-This algorithm can be run for small partition of inputs.\\
-The thresholding is a hard limit set to ignore inputs that we do not want to be included in the final count. Such pruning, as presented in Step 11 of the algorithm, reduces the data to be transferred from individual map task to the global accumulator
 
 \subsection {Pseudo Code}
 \begin{lstlisting}
@@ -150,21 +140,45 @@ for (i <- 0 to itemSet.size - 1) {
 countTable
 \end{lstlisting}
 
+\section{SON A-Priori Algorithm}
+
+The straight-forward A-priori algorithm does not have the best chances of parallelizing.
+A-priori algorithm attempts to iterate through the entire dataset in each pass and accumulates frequent itemsets.
+In Map-Reduce, it cause a problem because we have to read the whole data from HDFS every iteration.
+In Spark, this problem can be solved by caching the transactions data in memory.
+However, if this data is huge, it might not fit in the memory.
+
+The SON A-Priori implementation in the other hand uses the idea of local computation.
+SON A-Priori partitions the data and attempts to look at smaller subsets of the input and the local winners are sent across to a global reducer (or equivalent) so that global frequent itemsets can be computed.
+It relies on a principle that "an itemset cannot be a frequent itemset globally if it is not so in at least one partition".
+It is easy to organize the input as small chunks and deploy worker machines in parallel to mine the local frequent itemsets.
+After this phase, all the frequent itemsets can be accumulated and another pass can be run to find the global frequent itemsets. We will try to achieve this as our next task.
+
+In this progress report, we will implement the first task to generate local frequent itemsets (phase 1) by running A-Priori on the partition data.
+The input of this task is the list of followee.
+We will output a frequent item sets for every k until there is no more frequent item sets for that k.
+
+The second major task is to find the global frequent winner itemset from local itemsets (phase 2), which we will do as the next milestone.\\
+
 \subsection {Experiments}
 
-For the preprocessing task we tried to modify 
+We run A-Priori on the partition of the data.
+The threshold is a hard limit set to ignore inputs that we do not want to be included in the final count.
+Such pruning, as presented in Step 11 of the algorithm, reduces the data to be transferred from individual map task to the global accumulator
 
-In this task there are variables we can play around.
+There are few ideas where we can play around, which we can do in the future.
 The first one, we can change the the way we partition the data, that way we will have more fine-grained partition.
 Fine-grained partition allows smaller memory usage with better load distribution.
 Ideally, smaller partition means faster computation as well.
 In Spark, we have $repartition(numOfPartition)$ to reshuffle our data, before we run $mapPartition$.
 
 The second one, is to change the number of minimal support.
+In this progress report, we do it for few different values.
 Smaller support will give us larger amount of data, thus more computation.
 However, it also gives us more patterns of the data.
 
 \subsection {Result Sample}
+
 We ran this code locally and on AWS.
 
 Locally the sample input looks like:\\
@@ -178,17 +192,5 @@ For a high threshold like 0.9 the output is smaller since most of the frequent i
 
 On AWS, since our input was skewed, we could not generate the a suitable output. The program ran correctly multiple times, but we will examine the data further and decide the threshold accordingly to generate an acceptable output. Logs for few AWS logs are listed below:
 \href{https://github.ccs.neu.edu/prdx/CS6240-Project/tree/master/awsLogsOutput-1}{AWS Logs}
-\section{Phase 2: SON A-Priori Algorithm - generating global frequesnt itemsets}
-The straight-forward A-priori algorithm does not have the best chances of parallelizing.
-A-priori algorithm attempts to iterate through the entire dataset in each pass and accumulates frequent itemsets.
-In Map-Reduce, it cause a problem because we have to read the whole data from HDFS every iteration.
-In Spark, this problem can be solved by caching the transactions data in memory.
-However, if this data is huge, it might not fit in the memory.
-
-The SON A-Priori implementation in the other hand uses the idea of local computation.
-SON A-Priori partitions the data and attempts to look at smaller subsets of the input and the local winners are sent across to a global reducer (or equivalent) so that global frequent itemsets can be computed.
-It relies on a principle that "an itemset cannot be a frequent itemset globally if it is not so in at least one partition".
-It is easy to organize the input as small chunks and deploy worker machines in parallel to mine the local frequent itemsets.
-After this phase, all the frequent itemsets can be accumulated and another pass can be run to find the global frequent itemsets. We will try to achieve this as our next task.
 
 \end{document}
