@@ -28,8 +28,9 @@ object ProjectImpl {
     //Generating followeeList as List(followee1, followee2)
     val followeeList = input.map(x => (x.split("\t")(0),x.split("\t")(1).toInt)).groupByKey().map(y => (y._2.toList.sortBy(y => y)))
     //followeeList.coalesce(1).saveAsTextFile(args(1))
-    val locals = followeeList.mapPartitions(partition => Apriori.execute(partition, minSupport)).map(x => (x,1)).reduceByKey(_+_)//.saveAsTextFile(output)
-
+    val locals = followeeList.mapPartitions(partition => Apriori.execute(partition, minSupport)).map(x => (x,1)).reduceByKey(_+_)
+    logger.info("\n\n\n ------------"+locals.count())
+    //locals.mapPartitions(rec => SONImpl.execute(rec, minSupport))
     locals.saveAsTextFile(output)
 
 
