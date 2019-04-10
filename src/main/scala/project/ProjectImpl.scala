@@ -3,6 +3,7 @@ package project
 import org.apache.log4j.LogManager
 import org.apache.spark.{SparkConf, SparkContext}
 import algorithm.Apriori
+//import algorithm.SONImpl
 object ProjectImpl {
   def main(args: Array[String]): Unit = {
     val logger: org.apache.log4j.Logger = LogManager.getRootLogger
@@ -13,8 +14,7 @@ object ProjectImpl {
 
     //read input params
 
-    val conf = new SparkConf().setMaster("local")
-      .setAppName("Project - APriori")
+    val conf = new SparkConf().setAppName("Project - APriori")
 
     val sc = new SparkContext(conf)
     val input = sc.textFile(args(0))
@@ -25,12 +25,15 @@ object ProjectImpl {
     /*val filteredInp = input.filter(x => (x.split("\t")(0)).toInt < 100 && (x.split("\t")(1)).toInt < 100)
     filteredInp.foreach(x => println(x))*/
     
+    //Generating followeeList as List(followee1, followee2)
     val followeeList = input.map(x => (x.split("\t")(0),x.split("\t")(1).toInt)).groupByKey().map(y => (y._2.toList.sortBy(y => y)))
     //followeeList.coalesce(1).saveAsTextFile(args(1))
-    followeeList.mapPartitions(partition => Apriori.execute(partition, minSupport)).saveAsTextFile(output)
+    val locals = followeeList.mapPartitions(partition => Apriori.execute(partition, minSupport)).map(x => (x,1)).reduceByKey(_+_)//.saveAsTextFile(output)
+
+    locals.saveAsTextFile(output)
+
+
 
   }
-  
-  
   
 }

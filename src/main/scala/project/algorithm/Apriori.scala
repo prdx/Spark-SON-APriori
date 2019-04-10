@@ -10,6 +10,8 @@ object Apriori {
 
 
   def execute(_baskets: Iterator[List[Int]], sp: Float): Iterator[String] = {
+    
+    //println ("\n\n\n APRIORI STARTED \n\n\n")
     val baskets: List[List[String]] = _baskets.toList.map(basket => basket.toList.map(x => x.toString))
     val len = baskets.length
     var itemPairs = 1
@@ -34,8 +36,8 @@ object Apriori {
       countTable = getCountTable(k1FreqItemset, itemPairs)
       k1FreqItemset = ListBuffer[String]()
 
-      println("------------")
-      println(countTable)
+      //println("------------")
+      //println(countTable)
     }
 
      freqItemset.iterator
