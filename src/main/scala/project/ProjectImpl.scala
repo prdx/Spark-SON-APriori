@@ -30,8 +30,8 @@ object ProjectImpl {
     //followeeList.coalesce(1).saveAsTextFile(args(1))
 
     var locals = followeeList.mapPartitions(partition => Apriori.execute(partition, minSupport))//.map(x => (x,1))//.reduceByKey(_+_)
-    //locals = sc.broadcast(locals)
-    val globals = followeeList.mapPartitions(partition => SONImpl.execute(partition, minSupport, locals))
+    val myLocals = locals.collect.toList
+    val globals = followeeList.mapPartitions(partition => SONImpl.execute(partition, minSupport, myLocals)).reduceByKey(_+_)
     globals.coalesce(1).saveAsTextFile(output)
 
 

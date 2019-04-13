@@ -6,52 +6,26 @@ import scala.util.control.Breaks
 
 object SONImpl {
 
-	var freqItemset = ListBuffer[String]()
-
-
-	def execute(_baskets: Iterator[List[Int]], sp: Float, locals: org.apache.spark.rdd.RDD[String]) :  Iterator[String] = {
+	def execute(_baskets: Iterator[List[Int]], sp: Float, myLocals:List[String]) :  Iterator[(String, Int)] = {
         
-        //val len = _baskets.length
-	    //println("\n\nLEN\n\n"+len)
-      
-	    //val countThreshold = math.ceil(len * sp)
 	    val baskets: List[List[Int]] = _baskets.toList//.map(basket => basket.toList.map(x => x.toString))
 	    val len = baskets.length
-	    println("\n\nLEN - "+len)
+	    val countThreshold = math.ceil(len * sp)
+	    //var localSet = Set[String]()
+	    val globalList  = ListBuffer[(String, Int)]()
+	    myLocals.foreach(x => println("x-" + x))
         
         baskets.foreach {basket =>
-        	println("Basket" + basket)
-        	locals.foreach { local =>
-        		println("\n\n")
-        		println("Local" + local)
         		println("Basket" + basket)
-        		println("\n\n")
-        		freqItemset += local
+        	myLocals.foreach { local =>
+ 	       		
+        		globalList += ((local,1))
         	}}
         
-		return freqItemset.iterator
+		return globalList.iterator
 	}
 
-	/*def Phase2(count_threshold:Float, local_freq_itemsets) = {
-        global_freq_itemsets = sc.parallelize(local_freq_itemsets).reduceByKey(_ + _)
-    							 .filter((_itemset, _counts): _counts >= count_threshold).collect()
-                
-		return global_freq_itemsets
-	}
+	
 
-	def setFreqItems(baskets: List[List[String]], sp: Float): mutable.HashMap[String, Int] = {
-    val countTable = mutable.HashMap.empty[String, Int]
-
-    baskets.foreach(basket =>
-      basket.foreach(i =>
-        countTable.get(i) match {
-          case None => countTable += (i -> 1)
-          case Some(x) => countTable(i) += 1
-        }
-      )
-    )
-
-    countTable
-  }*/
-
+	
 }

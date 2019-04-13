@@ -8,7 +8,7 @@ app.name=Project
 jar.name=project.jar
 maven.jar.name=project-1.0.jar
 job.name=project.ProjectImpl
-job.min.support= 0
+job.min.support= 0.5
 local.master=local[4]
 local.input=input
 local.output=output
@@ -23,7 +23,7 @@ aws.subnet.id=subnet-6356553a
 aws.input=input
 aws.output=output
 aws.log.dir=log
-aws.min.support=0.3
+aws.min.support=0.05
 aws.num.nodes=5
 aws.instance.type=m4.large
 # -----------------------------------------------------------
@@ -113,11 +113,11 @@ upload-app-aws:
 # Main EMR launch.
 aws: jar upload-app-aws delete-output-aws
 	aws emr create-cluster \
-		--name "Apriori Small cluster" \
+		--name "Apriori Small cluster fiftyMil sp.05" \
 		--release-label ${aws.emr.release} \
 		--instance-groups '[{"InstanceCount":${aws.num.nodes},"InstanceGroupType":"CORE","InstanceType":"${aws.instance.type}"},{"InstanceCount":1,"InstanceGroupType":"MASTER","InstanceType":"${aws.instance.type}"}]' \
 	    --applications Name=Hadoop Name=Spark \
-		--steps Type=CUSTOM_JAR,Name="${app.name}",Jar="command-runner.jar",ActionOnFailure=TERMINATE_CLUSTER,Args=["spark-submit","--deploy-mode","cluster","--class","${job.name}","s3://${aws.bucket.name}/${aws.num.nodes}/code/${jar.name}","s3://${aws.bucket.name}/${aws.num.nodes}/${aws.input}","s3://${aws.bucket.name}/${aws.num.nodes}/${aws.output}","${aws.min.support}"] \
+		--steps Type=CUSTOM_JAR,Name="${app.name}",Jar="command-runner.jar",ActionOnFailure=TERMINATE_CLUSTER,Args=["spark-submit","--deploy-mode","cluster","--class","${job.name}","s3://${aws.bucket.name}/${aws.num.nodes}/code/${jar.name}","s3://${aws.bucket.name}/${aws.input}","s3://${aws.bucket.name}/${aws.num.nodes}/${aws.output}","${aws.min.support}"] \
 		--log-uri s3://${aws.bucket.name}/${aws.num.nodes}/${aws.log.dir} \
 		--use-default-roles \
 		--enable-debugging \
