@@ -31,8 +31,9 @@ object ProjectImpl {
 
     var locals = followeeList.mapPartitions(partition => Apriori.execute(partition, minSupport))//.map(x => (x,1))//.reduceByKey(_+_)
     val myLocals = locals.collect.toList
-    val globals = followeeList.mapPartitions(partition => SONImpl.execute(partition, minSupport, myLocals)).reduceByKey(_+_).sortBy(_._2, false)
-    globals.coalesce(1).saveAsTextFile(output)
+    val globals = followeeList.mapPartitions(partition => SONImpl.execute(partition, minSupport, myLocals)).reduceByKey(_+_)
+    val minsp = followeeList.count * minSupport
+    globals.filter(x => x._2 > minsp).sortBy(_._2, false).coalesce(1).saveAsTextFile(output)
 
 
 
