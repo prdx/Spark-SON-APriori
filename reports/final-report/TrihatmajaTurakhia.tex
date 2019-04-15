@@ -1,0 +1,196 @@
+\documentclass[11pt]{article}
+\usepackage{fullpage}
+\usepackage{algorithm}% http://ctan.org/pkg/algorithms
+\usepackage{algpseudocode}% http://ctan.org/pkg/algorithmicx
+\usepackage{listings}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\begin{document}
+\thispagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1.8ex}
+\lstset{language=Scala}
+\newcommand{\hs}{\hspace{.1in}}
+
+\begin{center}
+    \Large{\bf CS 6240}
+    \Large{\bf Project Final Report\\}
+    \Large{Anak Agung Ngurah Bagus Trihatmaja, Jay Turakhia\\}
+    \href{https://github.ccs.neu.edu/prdx/CS6240-Project}{Project Repository}  \\
+\end{center}
+\medskip
+
+\section{Project Overview}
+There are various way to find associations between items in a dataset.
+Be it products that people buy together, songs that music aficionados listen together or books that readers would read.
+One such interesting association is that of Twitter followership.
+It is often seen that similar minded users follow similar users.
+In other words, if someone follows a person, who likely it will follow next?
+Such relations can be found by solving the \href{https://en.wikipedia.org/wiki/Association_rule_learning}{frequent item set problem} and here we attempt to do the same.
+One algorithm to mine the frequent pattern is A-priori.
+In this project, we will implement a variation of A-priori, which is \href{http://www.vldb.org/conf/1995/P432.PDF}{SON A-Priori}, to find such relations across millions of followership data quickly and efficiently in parallel.
+The algorithm is implemented in Spark.
+
+\section{Input Data}
+We are using \href{https://wiki.illinois.edu//wiki/display/forward/Dataset-UDI-TwitterCrawl-Aug2012}{Twitter} data to mine frequent followership patterns.
+As described by the data provider.
+The dataset contains a single txt file.
+In the file, there are 200 millions following relationships among Twitter users.
+A following relationship is from a user X to Y , where X follows Y, and Y is followed by X.
+The input file represents this relation as follows.\\
+$\big[$ Following Relationship 1 $\big]$\\
+$\big[$ Following Relationship 2 $\big]$
+
+A following relationship from a user to another user can be represented by the two users' IDs.
+Specifically, a following Relationship is represented as follows.
+
+1990012\hspace{1cm}1992012
+
+\section{Pre-processing}
+In Frequent item mining, we have transactions and item.
+For our project, we define a transaction as an adjacency list of followees and item as a user id.
+Therefore, based on our input, we need to combine the followee based on the follower id.
+So that we have something as follow: 
+
+$id_1, id_2$ \\
+$id_1, id_2, id_3, id_4$ \\
+$id_1, id_2, id_3$
+
+Where id is the followee's user Id.
+We will not used the follower's user id as it is not relevant for the algorithm.
+
+\subsection{Pseudocode}
+
+\begin{lstlisting}
+ val followeeList = input
+    .map(x => (x.split("\t")(0), Array(x.split("\t")(1).toInt)))
+    .groupByKey()
+    .map(y => (y._2.toList.sortBy(y => y)))
+\end{lstlisting}
+
+\section{A-priori}
+
+\subsection {Algorithm Analysis}
+The general algorithm for \href{https://www3.cs.stonybrook.edu/~cse634/lecture_notes/07apriori.pdf}{A-priori} is as follows\\
+\begin{algorithm}[H]
+    \caption{A-priori}
+
+    \begin{algorithmic}[1]
+        \State $C_K \gets $ Candidate itemset of size $k$
+        \State $L_K \gets $ frequent itemset of size $k$
+        \State
+        \State $L_1 \gets $ List of frequent items $k$
+        \State
+        \For{$k \gets 1; L_k \neq \emptyset; k++$}
+            \State $C_{k+1} \gets $ candidate generate from $L_k$
+            \For{each transaction $t$}
+                \State increment the count of all candidates in $C_{k+1}$ in $t$
+            \EndFor
+            \State $L_{k+1} \gets$ candidate in $C_{k+1}$ with minimum support
+        \EndFor
+    \end{algorithmic}
+\end{algorithm}
+
+
+\subsection {Pseudo Code}
+\begin{lstlisting}
+baskets.foreach { basket =>
+    // Candidate generation
+    _countTable.foreach { item => if (item._2 >= countThreshold) {
+            k1FreqItemset += item._1
+            freqItemset += item._1
+            countTable -= item._1
+        }}
+
+    // Increment by one for each transaction
+    _countTable.foreach { item =>
+        if (item._1.split(",").toSet.subsetOf(basket.toSet)) {
+            hasFreqItem = true
+            countTable(item._1) += 1
+        }}}
+\end{lstlisting}
+
+To generate $L_{k+1}$: \\
+
+\begin{lstlisting}
+for (i <- 0 to itemSet.size - 1) {
+    // Generate combinations
+    val c = itemSetList(i).split(",").toSet.subsets(itemPairs - 1).toList
+
+    val outerLoop = new Breaks
+    outerLoop.breakable {
+        for (j <- 0 to c.size - 1) {
+            val freqItemSetList = freqItemset.toList
+
+            innerLoop.breakable {
+                for (k <- 0 to freqItemSetList.size - 1) {
+                    if (freqItemSetList(k) == c(j).mkString(",")) {
+                        isExists = true
+                        innerLoop.break()
+                    }}}
+
+            if (!isExists) {
+                outerLoop.break()
+            } else {
+                // Generate new L
+                countTable += (itemSetList(i) -> 0)
+            }}}}
+
+countTable
+\end{lstlisting}
+
+\section{SON A-Priori Algorithm}
+
+The straight-forward A-priori algorithm does not have the best chances of parallelizing.
+A-priori algorithm attempts to iterate through the entire dataset in each pass and accumulates frequent itemsets.
+In Map-Reduce, it cause a problem because we have to read the whole data from HDFS every iteration.
+In Spark, this problem can be solved by caching the transactions data in memory.
+However, if this data is huge, it might not fit in the memory.
+
+The SON A-Priori implementation in the other hand uses the idea of local computation.
+SON A-Priori partitions the data and attempts to look at smaller subsets of the input and the local winners are sent across to a global reducer (or equivalent) so that global frequent itemsets can be computed.
+It relies on a principle that "an itemset cannot be a frequent itemset globally if it is not so in at least one partition".
+It is easy to organize the input as small chunks and deploy worker machines in parallel to mine the local frequent itemsets.
+After this phase, all the frequent itemsets can be accumulated and another pass can be run to find the global frequent itemsets. We will try to achieve this as our next task.
+
+In this progress report, we will implement the first task to generate local frequent itemsets (phase 1) by running A-Priori on the partition data.
+The input of this task is the list of followee.
+We will output a frequent item sets for every k until there is no more frequent item sets for that k.
+
+The second major task is to find the global frequent winner itemset from local itemsets (phase 2), which we will do as the next milestone.\\
+
+\subsection {Experiments}
+
+We run A-Priori on the partition of the data.
+The threshold is a hard limit set to ignore inputs that we do not want to be included in the final count.
+Such pruning, as presented in Step 11 of the algorithm, reduces the data to be transferred from individual map task to the global accumulator
+
+There are few ideas where we can play around, which we can do in the future.
+The first one, we can change the the way we partition the data, that way we will have more fine-grained partition.
+Fine-grained partition allows smaller memory usage with better load distribution.
+Ideally, smaller partition means faster computation as well.
+In Spark, we have $repartition(numOfPartition)$ to reshuffle our data, before we run $mapPartition$.
+
+The second one, is to change the number of minimal support.
+In this progress report, we do it for few different values.
+Smaller support will give us larger amount of data, thus more computation.
+However, it also gives us more patterns of the data.
+
+\subsection {Result Sample}
+
+We ran this code locally and on AWS.
+
+Locally the sample input looks like:\\
+1\hspace{1cm}2\\
+3\hspace{1cm}2\\
+4\hspace{1cm}2 and so on
+
+For a high threshold like 0.9 the output is smaller since most of the frequent items get pruned, and for a low threshold like 0.1, almost all itemsets are included in the result\\
+\href{https://github.ccs.neu.edu/prdx/CS6240-Project/tree/master/localLogs/sp_0.1}{LocalRun - 0.1},
+\href{https://github.ccs.neu.edu/prdx/CS6240-Project/tree/master/localLogs/3}{LocalRun - 0.9}\\
+
+On AWS, since our input was skewed, we could not generate the a suitable output. The program ran correctly multiple times, but we will examine the data further and decide the threshold accordingly to generate an acceptable output. Logs for few AWS logs are listed below:
+\href{https://github.ccs.neu.edu/prdx/CS6240-Project/tree/master/awsLogsOutput-1}{AWS Logs}
+
+\end{document}
