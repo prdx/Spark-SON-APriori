@@ -18,7 +18,7 @@ object FPGrowth {
     val output = args(1)
     val minSupport = args(2).toFloat
 
-    val followeeList = input.map(x => (x.split(",")(0), x.split(",")(1).toInt)).groupByKey().map(f => f._2.toArray)
+    val followeeList = input.map(x => (x.split("\t")(0), x.split("\t")(1).toInt)).groupByKey().map(f => f._2.toArray)
     followeeList.collect().foreach(print)
 
     val fpg = new FPGrowth()

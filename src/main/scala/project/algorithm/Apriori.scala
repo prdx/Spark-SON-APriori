@@ -5,14 +5,15 @@ import scala.collection.mutable.ListBuffer
 import scala.util.control.Breaks
 
 object Apriori {
-  var k1FreqItemset = ListBuffer[String]()
-  var freqItemset = ListBuffer[String]()
+  
+    var k1FreqItemset = ListBuffer[String]()
 
 
   def execute(_baskets: Iterator[List[Int]], sp: Float): Iterator[String] = {
-    freqItemset = ListBuffer[String]()
+    
+    var freqItemset = ListBuffer[String]()
+
     val baskets: List[List[String]] = _baskets.toList.map(basket => basket.toList.map(x => x.toString))
-    //println(baskets)
     val len = baskets.length
     var itemPairs = 1
     var hasFreqItems = !baskets.isEmpty
@@ -21,8 +22,11 @@ object Apriori {
     val countThreshold = math.ceil(len * sp)
 
     while(hasFreqItems) {
+
       if (itemPairs > 1) {
-        hasFreqItems = getFreqItems(baskets, countTable, sp, itemPairs, countThreshold)
+        var retVal = getFreqItems(baskets, freqItemset, countTable, sp, itemPairs, countThreshold)
+        hasFreqItems = retVal._1
+        freqItemset = retVal._2
       }
 
       val _countTable = countTable
@@ -59,7 +63,7 @@ object Apriori {
     countTable
   }
 
- def getFreqItems(baskets: List[List[String]], countTable: mutable.HashMap[String, Int], sp: Float, itemPairs: Int, countThreshold: Double): Boolean = {
+ def getFreqItems(baskets: List[List[String]], freqItemset: ListBuffer[String],  countTable: mutable.HashMap[String, Int], sp: Float, itemPairs: Int, countThreshold: Double): (Boolean, ListBuffer[String]) = {
     val _countTable: mutable.HashMap[String, Int] = countTable
     var hasFreqItem = false
 
@@ -79,7 +83,7 @@ object Apriori {
       }
     }
 
-    hasFreqItem
+    (hasFreqItem, freqItemset)
   }
 
   def getCountTable(freqItemset: ListBuffer[String], itemPairs: Int): mutable.HashMap[String, Int] = {
