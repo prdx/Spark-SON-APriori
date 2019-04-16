@@ -26,7 +26,7 @@ object ProjectImpl {
     filteredInp.foreach(x => println(x))*/
     
     //Generating followeeList as List(followee1, followee2)
-    val followeeList = input.map(x => (x.split(",")(0),x.split(",")(1).toInt)).groupByKey().map(y => (y._2.toList.sortBy(y => y)))
+    val followeeList = input.map(x => (x.split("\t")(0),x.split("\t")(1).toInt)).groupByKey().map(y => (y._2.toList.sortBy(y => y)))
     println("\n\n\t\tFollowee List generated\n\n")
     var locals = followeeList.mapPartitions(partition => Apriori.execute(partition, minSupport)).map(x => (x,1)).reduceByKey(_+_).collect.toList
     println("\n\n\t\tLocals generated\n\n")
