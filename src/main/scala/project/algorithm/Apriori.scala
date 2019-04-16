@@ -29,7 +29,7 @@ object Apriori {
         freqItemset = retVal._2
       }
 
-      println("\n\n\n\tHere1")
+      //println("\n\n\n\tHere1")
 
       val _countTable = countTable
       _countTable.foreach(item =>
@@ -40,7 +40,7 @@ object Apriori {
       )
       itemPairs += 1
       countTable = getCountTable(k1FreqItemset, itemPairs)
-      println("\n\n\n\tHere2")
+      //println("\n\n\n\tHere2")
       k1FreqItemset = ListBuffer[String]()
 
       //println("------------")
@@ -98,13 +98,11 @@ object Apriori {
       }
     }
 
-    println("\n\n\n\tHere1.1")
-    
     tmp.subsets(itemPairs).foreach { c =>
       itemSet += c.toList.map(x => x.toInt).sorted.toSet.mkString(",")
     }
 
-    println("\n\n\n\tHere1.2")
+    //println("\n\n\n\tHere1.2")
 
     val itemSetList = itemSet.toList
     for (i <- 0 to itemSet.size - 1) {
