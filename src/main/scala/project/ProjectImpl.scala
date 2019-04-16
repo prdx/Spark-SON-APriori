@@ -27,13 +27,14 @@ object ProjectImpl {
     
     //Generating followeeList as List(followee1, followee2)
     val followeeList = input.map(x => (x.split("\t")(0),x.split("\t")(1).toInt)).groupByKey().map(y => (y._2.toList.sortBy(y => y)))
-
-    var locals = followeeList.mapPartitions(partition => Apriori.execute(partition, minSupport))//.map(x => (x,1))//.reduceByKey(_+_)
-    val myLocals = locals./*coalesce(1).*/collect.toList
-    myLocals.foreach(x => println(x))
-    val globals = followeeList.mapPartitions(partition => SONImpl.execute(partition, minSupport, myLocals)).reduceByKey(_+_)
+    println("\n\n\t\tFollowee List generated\n\n")
+    var locals = followeeList.mapPartitions(partition => Apriori.execute(partition, minSupport)).collect.toList//.map(x => (x,1))//.reduceByKey(_+_)
+    println("\n\n\t\tLocals generated\n\n")
+    //val myLocals = locals.
+    //myLocals.foreach(x => println(x))
+    val globals = followeeList.mapPartitions(partition => SONImpl.execute(partition, minSupport, locals)).reduceByKey(_+_)
     val minsp = followeeList.count * minSupport
-    globals.filter(x => x._2 > minsp).sortBy(_._2, false).coalesce(1).saveAsTextFile(output)
+    globals.filter(x => x._2 >= minsp).sortBy(_._2, false).coalesce(1).saveAsTextFile(output)
 
 
 

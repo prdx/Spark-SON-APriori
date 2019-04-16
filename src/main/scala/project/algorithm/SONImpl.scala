@@ -12,12 +12,10 @@ object SONImpl {
 	    val len = baskets.length
 	    val countThreshold = math.ceil(len * sp)
 	    val globalList  = ListBuffer[(String, Int)]()
-	    //myLocals.foreach(x => println("x-" + x))
         
 	    var bsk = Set[String]()
 
         baskets.foreach {basket =>
-        	println("Basket - " + basket)
         	bsk = basket.toSet	
         	myLocals.foreach { local =>
  	       		var lsk = local.split(",").toSet
