@@ -165,7 +165,8 @@ It is easy to organize the input as small chunks and deploy worker machines in p
 After this phase, all the frequent itemsets can be accumulated and another pass can be run to find the global frequent itemsets.
 
 We implement the first task to generate local frequent itemsets (phase 1) by running A-Priori on the partition data.
-For each partition, we generate the frequent itemsets candidate using A-Priori, entirely in-memory.
+For each partition, we generate the frequent itemsets entirely in-memory.
+From MapReduce perspective, we can say that this task is map only task.
 The input of this task is the list of followee.
 
 The second major task is to find the global frequent winner itemset from local itemsets (phase 2).
@@ -201,9 +202,7 @@ def execute(_baskets, sp, myLocals) = {
 }
 \end{lstlisting}
 
-
-
-\subsection {Experiments}
+\subsection{Experiments}
 
 We run A-Priori on the partition of the data.
 The threshold is a hard limit set to ignore inputs that we do not want to be included in the final count.
@@ -221,28 +220,15 @@ In this report, we do it for few different values.
 Smaller support will give us larger amount of data during the phase 1, thus more computation.
 However, it also gives us more patterns of the data as in real world--less likely a pattern exists for min-support of $.9$.
 
-\begin{table}[h!]
-    \centering
-    \begin{tabular}{||c c||}
-        \hline
-        min-support & Number of patterns produced \\ [0.5ex]
-        \hline\hline
-        1 & 6 \\
-        2 & 7 \\
-        3 & 545 \\
-        4 & 545 \\
-        5 & 88 \\ [1ex]
-        \hline
-    \end{tabular}
-    \caption{Number of patterns produced with different min-support}
-    \label{table:1}
-\end{table}
+\subsubsection{Speedup}
 
-\begin{table}[h!]
+Hello
+
+\begin{table}
     \centering
     \begin{tabular}{||c c||}
         \hline
-        min-support & Running time \\ [0.5ex]
+        min-support & Running time \\
         \hline\hline
         1 & 6 \\
         2 & 7 \\
@@ -252,14 +238,57 @@ However, it also gives us more patterns of the data as in real world--less likel
         \hline
     \end{tabular}
     \caption{Running time for small cluster with various min-support}
-    \label{table:2}
+    \label{table:1}
 \end{table}
 
-\begin{table}[h!]
+\begin{table}
     \centering
     \begin{tabular}{||c c||}
         \hline
-        min-support & Running time \\ [0.5ex]
+        min-support & Running time \\
+        \hline\hline
+        1 & 6 \\
+        2 & 7 \\
+        3 & 545 \\
+        4 & 545 \\
+        5 & 88 \\
+        \hline
+    \end{tabular}
+    \caption{Running time for large cluster with various min-support}
+    \label{table:2}
+\end{table}
+
+\subsubsection{Scalability}
+
+Hello
+
+\begin{table}
+    \centering
+    \begin{tabular}{||c c c||}
+        \hline
+        number of clusters & min-support & Running time \\
+        \hline\hline
+        1 & 1 & 6 \\
+        2 & 1 & 7 \\
+        3 & 1 & 545 \\
+        4 & 1 & 545 \\
+        5 & 1 & 88 \\
+        \hline
+    \end{tabular}
+    \caption{Running time for fixed threshold with various number of clusters}
+    \label{table:3}
+\end{table}
+
+\subsubsection{Result Sample}
+
+Hello
+
+
+\begin{table}
+    \centering
+    \begin{tabular}{||c c||}
+        \hline
+        min-support & Number of patterns produced \\
         \hline\hline
         1 & 6 \\
         2 & 7 \\
@@ -268,11 +297,8 @@ However, it also gives us more patterns of the data as in real world--less likel
         5 & 88 \\ [1ex]
         \hline
     \end{tabular}
-    \caption{Running time for large cluster with various min-support}
-    \label{table:3}
+    \caption{Number of patterns produced with different min-support}
+    \label{table:4}
 \end{table}
-
-
-\subsection {Result Sample}
 
 \end{document}
