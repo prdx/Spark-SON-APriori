@@ -72,7 +72,11 @@ We will not used the follower's user id as it is not relevant for the algorithm.
 \section{A-priori}
 
 \subsection {Algorithm Analysis}
-The general algorithm for \href{https://www3.cs.stonybrook.edu/~cse634/lecture_notes/07apriori.pdf}{A-priori} is as follows\\
+
+In frequent itemset mining, we use one hyperparameter which is minimal support.
+Minimal support (min-support) determines how many times a pattern need to exists in the dataset.
+The general algorithm for \href{https://www3.cs.stonybrook.edu/~cse634/lecture_notes/07apriori.pdf}{A-priori} is as follows:
+
 \begin{algorithm}[H]
     \caption{A-priori}
 
@@ -91,6 +95,9 @@ The general algorithm for \href{https://www3.cs.stonybrook.edu/~cse634/lecture_n
         \EndFor
     \end{algorithmic}
 \end{algorithm}
+
+The join step happens by joining $L_{k-1}$ with itself, producing $C_k$.
+While for the pruning, any $k-1$-itemset that is not frequent cannot be a subset of a frequent k-itemset.
 
 
 \subsection {Pseudo Code}
@@ -135,7 +142,10 @@ for (i <- 0 to itemSet.size - 1) {
             } else {
                 // Generate new L
                 countTable += (itemSetList(i) -> 0)
-            }}}}
+            }
+        }
+    }
+}
 
 countTable
 \end{lstlisting}
@@ -152,13 +162,46 @@ The SON A-Priori implementation in the other hand uses the idea of local computa
 SON A-Priori partitions the data and attempts to look at smaller subsets of the input and the local winners are sent across to a global reducer (or equivalent) so that global frequent itemsets can be computed.
 It relies on a principle that "an itemset cannot be a frequent itemset globally if it is not so in at least one partition".
 It is easy to organize the input as small chunks and deploy worker machines in parallel to mine the local frequent itemsets.
-After this phase, all the frequent itemsets can be accumulated and another pass can be run to find the global frequent itemsets. We will try to achieve this as our next task.
+After this phase, all the frequent itemsets can be accumulated and another pass can be run to find the global frequent itemsets.
 
-In this progress report, we will implement the first task to generate local frequent itemsets (phase 1) by running A-Priori on the partition data.
+We implement the first task to generate local frequent itemsets (phase 1) by running A-Priori on the partition data.
+For each partition, we generate the frequent itemsets candidate using A-Priori, entirely in-memory.
 The input of this task is the list of followee.
-We will output a frequent item sets for every k until there is no more frequent item sets for that k.
 
-The second major task is to find the global frequent winner itemset from local itemsets (phase 2), which we will do as the next milestone.\\
+The second major task is to find the global frequent winner itemset from local itemsets (phase 2).
+We are removing the candidates from the first phase that are false-positives.
+The candidate itemsets computed in the first phase will contain all the frequent itemsets but may also contain itemsets that are not frequent when we consider the entire dataset.
+
+\subsection{Pseudocode}
+
+For the phase 2, the pseudocode is as follow.
+
+\begin{lstlisting}
+def execute(_baskets, sp, myLocals) = {
+
+    val baskets: List[List[String]] = _baskets.map(
+                basket => basket.map(x => x.toString)
+            )
+    val len = baskets.length
+    val countThreshold = math.ceil(len * sp)
+    val globalList  = ListBuffer[(String, Int)]()
+
+    var bsk = Set[String]()
+
+    baskets.foreach { basket =>
+        bsk = basket.toSet
+        myLocals.foreach { local =>
+            var lsk = local._1.split(",").toSet
+            if (lsk.subsetOf(bsk))
+                globalList += ((local._1,1))
+        }
+    }
+
+    return globalList.iterator
+}
+\end{lstlisting}
+
+
 
 \subsection {Experiments}
 
@@ -166,31 +209,70 @@ We run A-Priori on the partition of the data.
 The threshold is a hard limit set to ignore inputs that we do not want to be included in the final count.
 Such pruning, as presented in Step 11 of the algorithm, reduces the data to be transferred from individual map task to the global accumulator
 
-There are few ideas where we can play around, which we can do in the future.
+There are few ideas where we can play around.
 The first one, we can change the the way we partition the data, that way we will have more fine-grained partition.
 Fine-grained partition allows smaller memory usage with better load distribution.
-Ideally, smaller partition means faster computation as well.
+Ideally, smaller partition means faster local computation as well.
+However, we sacrifice the network traffic with this approach as we need to re-shuffle our data again.
 In Spark, we have $repartition(numOfPartition)$ to reshuffle our data, before we run $mapPartition$.
 
 The second one, is to change the number of minimal support.
-In this progress report, we do it for few different values.
-Smaller support will give us larger amount of data, thus more computation.
-However, it also gives us more patterns of the data.
+In this report, we do it for few different values.
+Smaller support will give us larger amount of data during the phase 1, thus more computation.
+However, it also gives us more patterns of the data as in real world--less likely a pattern exists for min-support of $.9$.
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{||c c||}
+        \hline
+        min-support & Number of patterns produced \\ [0.5ex]
+        \hline\hline
+        1 & 6 \\
+        2 & 7 \\
+        3 & 545 \\
+        4 & 545 \\
+        5 & 88 \\ [1ex]
+        \hline
+    \end{tabular}
+    \caption{Number of patterns produced with different min-support}
+    \label{table:1}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{||c c||}
+        \hline
+        min-support & Running time \\ [0.5ex]
+        \hline\hline
+        1 & 6 \\
+        2 & 7 \\
+        3 & 545 \\
+        4 & 545 \\
+        5 & 88 \\ [1ex]
+        \hline
+    \end{tabular}
+    \caption{Running time for small cluster with various min-support}
+    \label{table:2}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{||c c||}
+        \hline
+        min-support & Running time \\ [0.5ex]
+        \hline\hline
+        1 & 6 \\
+        2 & 7 \\
+        3 & 545 \\
+        4 & 545 \\
+        5 & 88 \\ [1ex]
+        \hline
+    \end{tabular}
+    \caption{Running time for large cluster with various min-support}
+    \label{table:3}
+\end{table}
+
 
 \subsection {Result Sample}
-
-We ran this code locally and on AWS.
-
-Locally the sample input looks like:\\
-1\hspace{1cm}2\\
-3\hspace{1cm}2\\
-4\hspace{1cm}2 and so on
-
-For a high threshold like 0.9 the output is smaller since most of the frequent items get pruned, and for a low threshold like 0.1, almost all itemsets are included in the result\\
-\href{https://github.ccs.neu.edu/prdx/CS6240-Project/tree/master/localLogs/sp_0.1}{LocalRun - 0.1},
-\href{https://github.ccs.neu.edu/prdx/CS6240-Project/tree/master/localLogs/3}{LocalRun - 0.9}\\
-
-On AWS, since our input was skewed, we could not generate the a suitable output. The program ran correctly multiple times, but we will examine the data further and decide the threshold accordingly to generate an acceptable output. Logs for few AWS logs are listed below:
-\href{https://github.ccs.neu.edu/prdx/CS6240-Project/tree/master/awsLogsOutput-1}{AWS Logs}
 
 \end{document}
