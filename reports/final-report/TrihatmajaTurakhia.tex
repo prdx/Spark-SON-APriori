@@ -282,9 +282,6 @@ For the scalability, we fix the min-support of $.75$.
         5 & 10,000 & 1.4 minutes \\
         5 & 100,000 & 1.4 minutes \\
         \hline
-        10 & 10,000 & 1.4 minutes \\
-        10 & 100,000 & 1.4 minutes \\
-        \hline
     \end{tabular}
     \caption{Running time for fixed threshold with various number of clusters and max id}
     \label{table:4}
@@ -297,17 +294,21 @@ That is because of the min-support is too high, causing no candidates is generat
 
 \begin{table}[h!]
     \centering
-    \begin{tabular}{||c c||}
+    \begin{tabular}{||c c c||}
         \hline
-        min-support & Number of patterns produced \\
+        min-support & Number of patterns produced & running-time \\
         \hline\hline
-        $.75$ & 0 \\
-        $9 \times 10^{-4}$ & 6 \\
+        $.75$ & 0 & 4 \\
+        $9 \times 10^{-4}$ & 6 & 8 \\
+        $7 \times 10^{-4}$ & 20 & 37 \\
+        $75 \times 10^{-5}$ & - & $>$350 \\
         \hline
     \end{tabular}
     \caption{Number of patterns produced with different min-support}
     \label{table:5}
 \end{table}
+
+\href{https://github.ccs.neu.edu/prdx/CS6240-Project/tree/master/thresholdRuns}{Threshold run logs and outputs}
 
 \subsubsection{The effect of a skewed data}
 
