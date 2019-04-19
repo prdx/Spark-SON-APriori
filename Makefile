@@ -8,7 +8,7 @@ app.name=Project
 jar.name=project.jar
 maven.jar.name=project-1.0.jar
 job.name=project.ProjectImpl
-job.min.support= 0.5
+job.min.support= 0.9
 local.master=local[4]
 local.input=input
 local.output=output
@@ -18,12 +18,12 @@ hdfs.input=input
 hdfs.output=output
 # AWS EMR Execution
 aws.emr.release=emr-5.21.0
-aws.bucket.name=mr-prj-son2
+aws.bucket.name=mr-prj-son
 aws.subnet.id=subnet-6356553a
 aws.input=input
 aws.output=output
 aws.log.dir=log
-aws.min.support=0.000075
+aws.min.support=0.0001
 aws.num.nodes=10
 aws.instance.type=m4.large
 # -----------------------------------------------------------
@@ -86,7 +86,7 @@ download-output-hdfs:
 # Make sure Hadoop  is set up (in /etc/hadoop files) for pseudo-clustered operation (not standalone).
 # https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/SingleCluster.html#Pseudo-Distributed_Operation
 pseudo: jar stop-yarn format-hdfs init-hdfs upload-input-hdfs start-yarn clean-local-output
-	spark-submit --class ${job.name} --master yarn --deploy-mode cluster ${jar.name} ${local.input} ${local.output} ${aws.min.support}
+	spark-submit --class ${job.name} --master yarn --deploy-mode cluster ${jar.name} ${local.input} ${local.output}
 	make download-output-hdfs
 
 # Runs pseudo-clustered (quickie).
@@ -113,11 +113,11 @@ upload-app-aws:
 # Main EMR launch.
 aws: jar upload-app-aws delete-output-aws
 	aws emr create-cluster \
-		--name "Apriori Small cluster fiftyMil sp.05" \
+		--name "large SON sp.0001 RunAttempt" \
 		--release-label ${aws.emr.release} \
 		--instance-groups '[{"InstanceCount":${aws.num.nodes},"InstanceGroupType":"CORE","InstanceType":"${aws.instance.type}"},{"InstanceCount":1,"InstanceGroupType":"MASTER","InstanceType":"${aws.instance.type}"}]' \
 	    --applications Name=Hadoop Name=Spark \
-		--steps Type=CUSTOM_JAR,Name="${app.name}",Jar="command-runner.jar",ActionOnFailure=TERMINATE_CLUSTER,Args=["spark-submit","--deploy-mode","cluster","--class","${job.name}","s3://${aws.bucket.name}/${aws.num.nodes}/code/${jar.name}","s3://${aws.bucket.name}/${aws.num.nodes}/${aws.input}","s3://${aws.bucket.name}/${aws.num.nodes}/${aws.output}","${aws.min.support}"] \
+		--steps Type=CUSTOM_JAR,Name="${app.name}",Jar="command-runner.jar",ActionOnFailure=TERMINATE_CLUSTER,Args=["spark-submit","--deploy-mode","cluster","--class","${job.name}","s3://${aws.bucket.name}/${aws.num.nodes}/code/${jar.name}","s3://${aws.bucket.name}/${aws.input}","s3://${aws.bucket.name}/${aws.num.nodes}/${aws.output}","${aws.min.support}"] \
 		--log-uri s3://${aws.bucket.name}/${aws.num.nodes}/${aws.log.dir} \
 		--use-default-roles \
 		--enable-debugging \
@@ -126,7 +126,7 @@ aws: jar upload-app-aws delete-output-aws
 # Download output from S3.
 download-output-aws: clean-local-output
 	mkdir ${local.output}
-	aws s3 sync s3://${aws.bucket.name}/${aws.output} ${local.output}
+	aws s3 sync s3://${aws.bucket.name}/${aws.num.nodes}/${aws.output} ${local.output}
 
 # Change to standalone mode.
 switch-standalone:
