@@ -30,11 +30,10 @@ object ProjectImpl {
     followeeList.repartition(60)
     println("\n\n\t\tFollowee List generated\n\n")
 
-    var locals = followeeList.mapPartitions(partition => Apriori.execute(partition, minSupport)).map(x => (x,1)).reduceByKey(_+_).collect.toList
+    var locals = followeeList.mapPartitions(partition => Apriori.execute(partition, minSupport), preservesPartitioning=true).map(x => (x,1)).reduceByKey(_+_).collect.toList
     println("\n\n\t\tLocals generated\n\n")
-    //val myLocals = locals.
-    //myLocals.foreach(x => println(x))
-    val globals = followeeList.mapPartitions(partition => SONImpl.execute(partition, minSupport, locals)).reduceByKey(_+_)
+
+    val globals = followeeList.mapPartitions(partition => SONImpl.execute(partition, minSupport, locals), preservesPartitioning=true).reduceByKey(_+_)
     val minsp = followeeList.count * minSupport
     globals.filter(x => x._2 >= minsp).sortBy(_._2, false).saveAsTextFile(output)
   }
