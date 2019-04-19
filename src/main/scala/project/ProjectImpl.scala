@@ -26,8 +26,8 @@ object ProjectImpl {
     val filteredInp = input.filter(x => (x.split("\t")(0)).toInt < 100000 && (x.split("\t")(1)).toInt < 100000)
 
     // Generating followeeList as List(followee1, followee2)
-    val followeeList = filteredInp.map(x => (x.split("\t")(0),x.split("\t")(1).toInt)).groupByKey().map(y => (y._2.toList.sortBy(y => y)))
-    followeeList.repartition(1000)
+    val followeeList = filteredInp.map(x => (x.split("\t")(0),x.split("\t")(1).toInt)).groupByKey().map(y => (y._2.toList))
+    followeeList.repartition(60)
     println("\n\n\t\tFollowee List generated\n\n")
 
     var locals = followeeList.mapPartitions(partition => Apriori.execute(partition, minSupport)).map(x => (x,1)).reduceByKey(_+_).collect.toList
