@@ -69,6 +69,24 @@ We will not used the follower's user id as it is not relevant for the algorithm.
     .map(y => (y._2.toList.sortBy(y => y)))
 \end{lstlisting}
 
+After combining all the edges into adjacency list grouped by the user ID, on the full dataset, we get:
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{||c c||}
+        \hline
+        Summary & Value \\
+        \hline\hline
+        Number of rows & 21,603,807 \\
+        Maximum length adjacency list & 15,088 \\
+        Minimum length of adjacency list & 1 \\
+        Average length of adjacency list & 13.2 \\
+        \hline
+    \end{tabular}
+    \caption{Dataset summary}
+    \label{table:1}
+\end{table}
+
 \section{A-priori}
 
 \subsection {Algorithm Analysis}
@@ -208,12 +226,6 @@ We run A-Priori on the partition of the data.
 The threshold is a hard limit set to ignore inputs that we do not want to be included in the final count.
 Such pruning, as presented in Step 11 of the algorithm, reduces the data to be transferred from individual map task to the global accumulator
 
-There are few ideas where we can play around.
-The first one, we can change the the way we partition the data, that way we will have more fine-grained partition.
-Fine-grained partition allows smaller memory usage with better load distribution.
-Ideally, smaller partition means faster local computation as well.
-However, we sacrifice the network traffic with this approach as we need to re-shuffle our data again.
-In Spark, we have $repartition(numOfPartition)$ to reshuffle our data, before we run $mapPartition$.
 
 The second one, is to change the number of minimal support.
 In this report, we do it for few different values.
@@ -222,83 +234,93 @@ However, it also gives us more patterns of the data as in real world--less likel
 
 \subsubsection{Speedup}
 
-Hello
 
-\begin{table}
+\begin{table}[h!]
     \centering
     \begin{tabular}{||c c||}
         \hline
         min-support & Running time \\
         \hline\hline
-        1 & 6 \\
-        2 & 7 \\
-        3 & 545 \\
-        4 & 545 \\
-        5 & 88 \\ [1ex]
+        $9 \times 10^{-4}$ & 14 minutes \\
+        $75 \times 10^{-6}$ & $>$ 5 hours (terminated) \\
         \hline
     \end{tabular}
     \caption{Running time for small cluster with various min-support}
-    \label{table:1}
+    \label{table:2}
 \end{table}
 
-\begin{table}
+\begin{table}[h!]
     \centering
     \begin{tabular}{||c c||}
         \hline
         min-support & Running time \\
         \hline\hline
-        1 & 6 \\
-        2 & 7 \\
-        3 & 545 \\
-        4 & 545 \\
-        5 & 88 \\
+        $9 \times 10^{-4}$ & 8 minutes \\
+        $75 \times 10^{-6}$ & $>$ 5 hours (terminated) \\
         \hline
     \end{tabular}
     \caption{Running time for large cluster with various min-support}
-    \label{table:2}
+    \label{table:3}
 \end{table}
 
 \subsubsection{Scalability}
 
-Hello
+As we measure the scalability, the lower the min-support the longer it takes to run.
+We expect a longer duration to finish for larger input.
+The way we reduce our input by using the max id method as we previously used in the assignments.
+That is, we only include an edge if both vertices id are below our max id.
+For the scalability, we fix the min-support of $.75$.
 
-\begin{table}
+\begin{table}[h!]
     \centering
     \begin{tabular}{||c c c||}
         \hline
-        number of clusters & min-support & Running time \\
+        Number of clusters & Max id & Running time \\
         \hline\hline
-        1 & 1 & 6 \\
-        2 & 1 & 7 \\
-        3 & 1 & 545 \\
-        4 & 1 & 545 \\
-        5 & 1 & 88 \\
+        5 & 10,000 & 1.4 minutes \\
+        5 & 100,000 & 1.4 minutes \\
+        \hline
+        10 & 10,000 & 1.4 minutes \\
+        10 & 100,000 & 1.4 minutes \\
         \hline
     \end{tabular}
-    \caption{Running time for fixed threshold with various number of clusters}
-    \label{table:3}
+    \caption{Running time for fixed threshold with various number of clusters and max id}
+    \label{table:4}
 \end{table}
+
+We see that the running time is almost the same. 
+That is because of the min-support is too high, causing no candidates is generated and therefore the job ends sooner.
 
 \subsubsection{Result Sample}
 
-Hello
-
-
-\begin{table}
+\begin{table}[h!]
     \centering
     \begin{tabular}{||c c||}
         \hline
         min-support & Number of patterns produced \\
         \hline\hline
-        1 & 6 \\
-        2 & 7 \\
-        3 & 545 \\
-        4 & 545 \\
-        5 & 88 \\ [1ex]
+        $.75$ & 0 \\
+        $9 \times 10^{-4}$ & 6 \\
         \hline
     \end{tabular}
     \caption{Number of patterns produced with different min-support}
-    \label{table:4}
+    \label{table:5}
 \end{table}
+
+\subsubsection{The effect of a skewed data}
+
+In our exploratory data analysis during the pre-processing, we have seen that there is a very long adjacency list compared to the average.
+This indicates our data can be skewed.
+In SON-APriori, this can be a problem--imagine in one partition there is a skewed data, then that cluster will take longer time to finish.
+If there those long adjancency lists are not frequent globally, we basically waste the computation.
+
+To illustrate, we compare the running time of the full dataset with the dataset where we truncate the adjacency list to only maximum 10 edges.
+We then fix a high min-support just to see the result.
+With a full dataset our job runs for 4.7 minutes while after truncated we receive 3.7 minutes. 
+
+To avoid such cases, we repartition our data to make each partition smaller after the pre-processing is done.
+Fine-grained partition allows smaller memory usage with better load distribution.
+Ideally, smaller partition means faster local computation as well.
+However, we sacrifice the network traffic with this approach as we need to re-shuffle our data again.
 
 \end{document}
