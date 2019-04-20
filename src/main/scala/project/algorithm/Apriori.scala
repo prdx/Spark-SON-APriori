@@ -13,24 +13,25 @@ object Apriori {
     
     var freqItemset = ListBuffer[String]()
 
-    val baskets: List[List[String]] = _baskets.toList.map(basket => basket.toList.map(x => x.toString))
+    val baskets: List[List[String]] = _baskets.toList.map(basket => basket.map(x => x.toString))
     val len = baskets.length
     var itemPairs = 1
     var hasFreqItems = !baskets.isEmpty
 
+    // First we get the count table for every item
     var countTable = setFreqItems(baskets, sp, itemPairs)
+
+    // We set the new threshold based on the new length of the partition
     val countThreshold = math.ceil(len * sp)
 
     while(hasFreqItems) {
-
       if (itemPairs > 1) {
         var retVal = getFreqItems(baskets, freqItemset, countTable, sp, itemPairs, countThreshold)
         hasFreqItems = retVal._1
         freqItemset = retVal._2
       }
 
-      //println("\n\n\n\tHere1")
-
+      // We check frequent threshold
       val _countTable = countTable
       _countTable.foreach(item =>
         if(item._2 >= countThreshold) {
@@ -40,16 +41,13 @@ object Apriori {
       )
       itemPairs += 1
       countTable = getCountTable(k1FreqItemset, itemPairs)
-      //println("\n\n\n\tHere2")
       k1FreqItemset = ListBuffer[String]()
-
-      //println("------------")
-      //println(countTable)
     }
      freqItemset.iterator
   }
 
   def setFreqItems(baskets: List[List[String]], sp: Float, numberOfPair: Int): mutable.HashMap[String, Int] = {
+    // We build the count table here
     val countTable = mutable.HashMap.empty[String, Int]
 
     baskets.foreach(basket =>
@@ -70,6 +68,7 @@ object Apriori {
 
     baskets.foreach { basket =>
       _countTable.foreach { item =>
+        // Append to the frequent itemlist if the count is more than threshold
         if (item._2 >= countThreshold) {
           k1FreqItemset += item._1
           freqItemset += item._1
@@ -92,17 +91,17 @@ object Apriori {
     var tmp = Set[String]()
     var countTable = mutable.HashMap.empty[String, Int]
 
+    // Get each item from frequent itemsets
     freqItemset.foreach { item =>
       item.split(",").foreach { i =>
         tmp += i
       }
     }
 
+    // Construct a new combination from the previous pair
     tmp.subsets(itemPairs).foreach { c =>
       itemSet += c.toList.map(x => x.toInt).sorted.toSet.mkString(",")
     }
-
-    //println("\n\n\n\tHere1.2")
 
     val itemSetList = itemSet.toList
     for (i <- 0 to itemSet.size - 1) {
@@ -111,6 +110,7 @@ object Apriori {
 
       outerLoop.breakable {
         for (j <- 0 to c.size - 1) {
+          // Check new candidate should also be in previous itemsets
           var isExists = false
           val innerLoop = new Breaks
           val freqItemSetList = freqItemset.toList
@@ -124,14 +124,13 @@ object Apriori {
             }
           }
 
+          // If the constructed combination does not exist in the previous itemset
           if (!isExists) {
             outerLoop.break()
           } else {
             countTable += (itemSetList(i) -> 0)
           }
         }
-        println("\n\n\n\tHere1.3")
-
       }
     }
 
